@@ -31,20 +31,19 @@
             const email = document.getElementById('resetEmailInput').value;
             if (!email) return alert("Bitte E-Mail eingeben!");
             try {
-                const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+                const actionCodeSettings = { url: "https://niklaskaehler14-pixel.github.io/zentrale/", handleCodeInApp: true };
                 await sendPasswordResetEmail(auth, email, actionCodeSettings);
                 alert("E-Mail gesendet! Klick auf den Link in der Mail.");
                 closeResetModal();
             } catch (e) { alert(e.message); }
         };
 
-        // Prüfen, ob man gerade von einem Reset-Link kommt
         window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const oobCode = urlParams.get('oobCode');
             if (oobCode) {
                 try {
-                    const email = await verifyPasswordResetCode(auth, oobCode);
+                    await verifyPasswordResetCode(auth, oobCode);
                     document.getElementById('newPassModal').style.display = 'flex';
                     window.currentOobCode = oobCode;
                 } catch (e) { alert("Der Link ist abgelaufen oder ungültig."); }
@@ -57,15 +56,15 @@
             try {
                 await confirmPasswordReset(auth, window.currentOobCode, newPass);
                 alert("Passwort erfolgreich geändert! Du kannst dich jetzt einloggen.");
-                window.location.href = window.location.pathname; // URL säubern
+                window.location.href = window.location.pathname; 
             } catch (e) { alert(e.message); }
         };
 
-        // --- DEIN BESTEHENDER CODE (UNVERÄNDERT) ---
+        // --- SPRACHE & UI ---
         let currentLang = 'de';
         const translations = {
-            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", forgot: "Passwort vergessen?" },
-            en: { title: "My Central", login: "Login", reg: "Register", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", forgot: "Forgot password?" }
+            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", add: "Schnell-Links speichern", save: "Speichern ✨", name: "Name", url: "URL (z.B. github.com)", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", forgot: "Passwort vergessen?" },
+            en: { title: "My Central", login: "Login", reg: "Register", add: "Save Quick-Links", save: "Save ✨", name: "Name", url: "URL (e.g. github.com)", switch: "No account? Register", logout: "Logout", settings: "Settings", forgot: "Forgot password?" }
         };
 
         window.toggleLang = () => {
@@ -83,6 +82,7 @@
             });
         }
 
+        // --- AUTH LOGIK ---
         window.handleSubmit = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
@@ -99,9 +99,14 @@
             document.getElementById('authSection').style.display = user ? 'none' : 'flex';
             document.getElementById('dashboardSection').style.display = user ? 'block' : 'none';
             document.getElementById('topNav').style.display = user ? 'flex' : 'none';
-            if (user) loadLinks(user.uid);
+            if (user) {
+                // Hier wird die E-Mail ins Einstellungs-Fenster geschrieben
+                document.getElementById('userEmailDisplay').innerText = user.email;
+                loadLinks(user.uid);
+            }
         });
 
+        // --- FAVORITEN LOGIK ---
         window.addFav = async () => {
             const name = document.getElementById('favName').value;
             let url = document.getElementById('favUrl').value;
@@ -142,39 +147,119 @@
     </script>
 
     <style>
-        body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
-        .top-nav { width: 100%; display: none; justify-content: flex-end; padding: 15px; gap: 15px; position: fixed; top: 0; }
-        #dashboardSection { display: none; width: 90%; max-width: 600px; text-align: center; padding-top: 60px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .card { background: rgba(255,255,255,0.07); border-radius: 18px; padding: 20px; position: relative; display: flex; flex-direction: column; align-items: center; }
-        .fav-link-area { text-decoration: none; color: inherit; display: flex; flex-direction: column; align-items: center; }
-        .icon { width: 40px; height: 40px; }
-        .btn-del { position: absolute; top: 5px; right: 5px; background: none; border: none; color: white; opacity: 0.3; cursor: pointer; }
-        .add-section { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; margin-top: 30px; }
-        input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: none; background: #1e293b; color: white; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 10px; border-radius: 8px; border: none; background: #4facfe; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px; width: 300px; text-align: center; }
-        .forgot-link { font-size: 0.8rem; color: #4facfe; cursor: pointer; display: block; margin: 10px 0; }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000; }
-        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; width: 280px; text-align: center; border: 1px solid #4facfe; }
+        body { 
+            margin: 0; 
+            background: #0f172a; 
+            color: white; 
+            font-family: sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh;
+        }
+        
+        .top-nav { width: 100%; display: none; justify-content: flex-end; padding: 15px; gap: 15px; position: fixed; top: 0; box-sizing: border-box; z-index: 500; }
+        
+        #dashboardSection { display: none; width: 90%; max-width: 800px; text-align: center; padding-top: 60px; padding-bottom: 50px; }
+        
+        h1 { font-size: 2.5rem; text-shadow: 0 0 20px rgba(79, 172, 254, 0.6); margin-bottom: 30px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        
+        /* --- NEUES CARD DESIGN MIT LEUCHTEFFEKT --- */
+        .card { 
+            background: rgba(30, 41, 59, 0.7); 
+            border-radius: 16px; 
+            padding: 25px 20px; 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        /* Der animierte bunte Rand unten */
+        .card::before {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 3px;
+            background: linear-gradient(90deg, #ff007a, #ff8a00, #00f2fe, #4facfe);
+            background-size: 300% 300%;
+            animation: glowGradient 4s ease infinite;
+            opacity: 0.8;
+            transition: all 0.4s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Beim rüberfahren leuchtet die Karte leicht von unten */
+        .card:hover::before {
+            height: 100%;
+            opacity: 0.15;
+        }
+
+        @keyframes glowGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .fav-link-area { text-decoration: none; color: inherit; display: flex; flex-direction: column; align-items: center; width: 100%; z-index: 2; }
+        .fav-label { margin-top: 12px; font-weight: bold; font-size: 1.1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .icon { width: 48px; height: 48px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+        
+        .btn-del { position: absolute; top: 8px; right: 12px; background: none; border: none; color: white; opacity: 0.3; cursor: pointer; font-size: 1.2rem; z-index: 3; transition: opacity 0.2s; }
+        .btn-del:hover { opacity: 1; color: #ef4444; }
+
+        /* --- ADD SECTION DESIGN --- */
+        .add-section { 
+            background: rgba(30, 41, 59, 0.5); 
+            padding: 30px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            text-align: left;
+        }
+        .add-section h3 { margin-top: 0; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        
+        input { width: 100%; padding: 12px 15px; margin: 8px 0 15px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; font-size: 1rem; transition: border 0.3s; }
+        input:focus { outline: none; border-color: #4facfe; box-shadow: 0 0 10px rgba(79, 172, 254, 0.3); }
+        
+        .btn-main { width: 100%; padding: 12px; border-radius: 10px; border: none; background: linear-gradient(90deg, #00f2fe, #4facfe); color: white; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4); }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79, 172, 254, 0.6); }
+
+        #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .login-card { background: rgba(30, 41, 59, 0.8); padding: 40px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+        
+        .forgot-link { font-size: 0.85rem; color: #4facfe; cursor: pointer; display: block; margin: 15px 0; text-align: right; }
+        .forgot-link:hover { text-decoration: underline; }
+        
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(5px); }
+        .modal-content { background: #1e293b; padding: 35px; border-radius: 20px; width: 90%; max-width: 320px; text-align: center; border: 1px solid #4facfe; box-shadow: 0 0 30px rgba(79, 172, 254, 0.2); }
     </style>
 </head>
 <body>
 
     <div class="top-nav" id="topNav">
-        <span onclick="toggleLang()" style="cursor:pointer" id="langBtn">🇩🇪</span>
-        <span onclick="toggleSettings()" style="cursor:pointer">⚙️</span>
+        <span onclick="toggleLang()" style="cursor:pointer; font-size: 1.5rem;" id="langBtn">🇩🇪</span>
+        <span onclick="toggleSettings()" style="cursor:pointer; font-size: 1.5rem;">⚙️</span>
     </div>
 
     <div id="authSection">
         <div class="login-card">
-            <h2 data-t="login">Anmelden</h2>
+            <h2 data-t="login" style="margin-top:0; margin-bottom: 25px;">Anmelden</h2>
             <input type="email" id="email" placeholder="E-Mail">
             <input type="password" id="password" placeholder="Passwort">
             <span class="forgot-link" onclick="openResetModal()" data-t="forgot">Passwort vergessen?</span>
             <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()" data-t="login">Anmelden</button>
-            <p onclick="toggleMode()" style="cursor:pointer; font-size: 0.8rem; opacity: 0.6;" data-t="switch">Registrieren</p>
+            <p onclick="toggleMode()" style="cursor:pointer; font-size: 0.9rem; opacity: 0.7; margin-top: 20px;" data-t="switch">Registrieren</p>
         </div>
     </div>
 
@@ -182,25 +267,27 @@
         <h1 data-t="title">Meine Zentrale</h1>
         <div id="dynamicGrid" class="grid"></div>
         <div class="add-section" id="addSection">
-            <h3 data-t="add">Link hinzufügen</h3>
+            <h3 data-t="add">Schnell-Links speichern</h3>
             <input type="text" id="favName" data-t="name" placeholder="Name">
-            <input type="text" id="favUrl" data-t="url" placeholder="URL">
+            <input type="text" id="favUrl" data-t="url" placeholder="URL (z.B. github.com)">
             <button class="btn-main" onclick="addFav()" data-t="save">Speichern ✨</button>
         </div>
     </div>
 
     <div id="resetModal" class="modal">
         <div class="modal-content">
-            <h3 style="margin:0">Passwort vergessen</h3>
+            <h3 style="margin-top:0; margin-bottom: 15px;">Passwort vergessen</h3>
+            <p style="font-size: 0.85rem; opacity: 0.7; margin-bottom: 20px;">Gib deine E-Mail ein, um einen Reset-Link zu erhalten.</p>
             <input type="email" id="resetEmailInput" placeholder="Deine E-Mail">
             <button class="btn-main" onclick="sendResetEmail()">Link senden</button>
-            <p onclick="closeResetModal()" style="cursor:pointer; opacity:0.5">Abbrechen</p>
+            <p onclick="closeResetModal()" style="cursor:pointer; font-size: 0.9rem; opacity:0.5; margin-top: 20px;">Abbrechen</p>
         </div>
     </div>
 
     <div id="newPassModal" class="modal">
         <div class="modal-content">
-            <h3 style="margin:0">Neues Passwort</h3>
+            <h3 style="margin-top:0; margin-bottom: 15px;">Neues Passwort</h3>
+            <p style="font-size: 0.85rem; opacity: 0.7; margin-bottom: 20px;">Bitte wähle ein neues, sicheres Passwort.</p>
             <input type="password" id="newPassInput" placeholder="Min. 6 Zeichen">
             <button class="btn-main" onclick="saveNewPassword()">Passwort speichern</button>
         </div>
@@ -208,9 +295,13 @@
 
     <div id="settingsModal" class="modal" style="z-index:1000">
         <div class="modal-content">
-            <h2 data-t="settings">Einstellungen</h2>
-            <button class="btn-main" onclick="logout()" data-t="logout" style="background:#ef4444">Abmelden</button>
-            <p onclick="toggleSettings()" style="cursor:pointer; opacity:0.5">Schließen</p>
+            <h2 data-t="settings" style="margin-top:0; margin-bottom: 25px;">Einstellungen</h2>
+            
+            <p style="font-size: 0.85rem; color: #a9a9a9; margin-bottom: 5px;">Angemeldet als:</p>
+            <p id="userEmailDisplay" style="font-weight: bold; color: #4facfe; margin-top: 0; margin-bottom: 25px; word-break: break-all;"></p>
+            
+            <button class="btn-main" onclick="logout()" data-t="logout" style="background: linear-gradient(90deg, #ef4444, #dc2626); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">Abmelden</button>
+            <p onclick="toggleSettings()" style="cursor:pointer; font-size: 0.9rem; opacity:0.5; margin-top: 20px;">Schließen</p>
         </div>
     </div>
 
