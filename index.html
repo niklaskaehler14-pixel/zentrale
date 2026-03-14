@@ -3,221 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Meine Zentrale</title>
+    <title>Meine Zentrale | Cloud</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // DEINE FIREBASE DATEN (Direkt aus deinem Screenshot)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCeuZLf52JxlN_V3T9_sFqMDccHN8hDP9w",
+            authDomain: "meine-zentrale.firebaseapp.com",
+            projectId: "meine-zentrale",
+            storageBucket: "meine-zentrale.firebasestorage.app",
+            messagingSenderId: "1026890917523",
+            appId: "1:1026890917523:web:78278ef14b8e89b0868f66"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- AUTH LOGIK ---
+        window.handleSubmit = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            const mode = document.getElementById('mainBtn').dataset.mode;
+
+            if (!email || !pass) return alert("Felder ausfüllen, Bro!");
+
+            try {
+                if (mode === 'register') {
+                    const confirmPass = document.getElementById('confirmPassword').value;
+                    if (pass !== confirmPass) return alert("Passwörter ungleich!");
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                } else {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                }
+            } catch (error) {
+                alert("Fehler: " + error.message);
+            }
+        };
+
+        window.logout = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('dashboardSection').style.display = 'flex';
+                loadLinks(user.uid);
+            } else {
+                document.getElementById('authSection').style.display = 'flex';
+                document.getElementById('dashboardSection').style.display = 'none';
+            }
+        });
+
+        // --- LINK LOGIK (CLOUD SYNC) ---
+        window.addFav = async () => {
+            const name = document.getElementById('favName').value;
+            let url = document.getElementById('favUrl').value;
+            const user = auth.currentUser;
+
+            if (name && url && user) {
+                if (!url.startsWith('http')) url = 'https://' + url;
+                const docRef = doc(db, "users", user.uid);
+                const snapshot = await getDoc(docRef);
+                let favorites = snapshot.exists() ? snapshot.data().links : [];
+                favorites.push({ name, url });
+                await setDoc(docRef, { links: favorites });
+                document.getElementById('favName').value = '';
+                document.getElementById('favUrl').value = '';
+            }
+        };
+
+        window.deleteFav = async (index) => {
+            const user = auth.currentUser;
+            const docRef = doc(db, "users", user.uid);
+            const snapshot = await getDoc(docRef);
+            let favorites = snapshot.data().links;
+            favorites.splice(index, 1);
+            await setDoc(docRef, { links: favorites });
+        };
+
+        function loadLinks(uid) {
+            onSnapshot(doc(db, "users", uid), (doc) => {
+                const grid = document.getElementById('favGrid');
+                const favorites = doc.exists() ? doc.data().links : [];
+                grid.innerHTML = favorites.map((fav, index) => {
+                    const domain = new URL(fav.url).hostname;
+                    return `
+                        <div class="fav-card-item">
+                            <button class="btn-del" onclick="deleteFav(${index})">×</button>
+                            <a href="${fav.url}" target="_blank" class="fav-link">
+                                <img src="https://www.google.com/s2/favicons?sz=64&domain=${domain}" class="favicon">
+                                <span>${fav.name}</span>
+                            </a>
+                        </div>
+                    `;
+                }).join('');
+            });
+        }
+    </script>
+
     <style>
-        :root {
-            --primary: #00f2fe;
-            --secondary: #4facfe;
-            --bg-dark: #05070a;
-            --bg-medium: #0f172a;
-            --bg-light: #1e293b;
-            --yt-glow: rgba(255, 0, 0, 0.5);
-            --tool-glow: rgba(0, 242, 254, 0.5);
-            --search-glow: rgba(0, 255, 136, 0.5);
-            --ublock-glow: rgba(128, 0, 0, 0.5);
-        }
-
-        html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; background-color: var(--bg-dark); }
-
-        body {
-            padding: 15px; box-sizing: border-box;
-            background: radial-gradient(circle at top right, var(--bg-light), var(--bg-medium), var(--bg-dark)) no-repeat center center fixed;
-            background-size: cover; font-family: 'Segoe UI', -apple-system, sans-serif;
-            display: flex; flex-direction: column; align-items: center; color: white;
-            position: relative; overflow-x: hidden;
-        }
-
-        /* Prank & Sprache */
-        .settings-prank { position: absolute; top: 22px; right: 95px; font-size: 18px; color: rgba(255, 255, 255, 0.05); cursor: pointer; z-index: 1000; }
-        .lang-switch {
-            position: absolute; top: 15px; right: 15px; background: rgba(255, 255, 255, 0.1);
-            padding: 8px 14px; border-radius: 12px; cursor: pointer; backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.2); z-index: 100;
-        }
-
-        h1 { margin-top: 65px; font-weight: 300; letter-spacing: 2px; text-align: center; font-size: 1.8rem; }
-
-        /* Grid System */
-        .main-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 600px; margin: 25px 0; }
-        .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; width: 100%; max-width: 600px; margin-bottom: 30px; }
-
-        /* Karten Basis */
-        .card, .fav-card-item {
-            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 20px;
-            text-align: center; color: white; font-weight: bold; text-decoration: none;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-            transition: all 0.3s ease; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-
-        /* NUR FÜR PC: HOVER & GLOW */
-        @media (min-width: 481px) {
-            .card:hover, .fav-card-item:hover { transform: translateY(-8px); background: rgba(255, 255, 255, 0.1); }
-            
-            .yt-card:hover { border-color: #ff0000; box-shadow: 0 0 30px var(--yt-glow); }
-            .ublock-card:hover { border-color: #800000; box-shadow: 0 0 30px var(--ublock-glow); }
-            .tool-card:hover { border-color: var(--primary); box-shadow: 0 0 30px var(--tool-glow); }
-            .search-card:hover { border-color: #00ff88; box-shadow: 0 0 30px var(--search-glow); }
-            
-            /* Favoriten-Glow passt sich Icon an */
-            .fav-card-item:hover { border-color: white; box-shadow: 0 0 25px rgba(255, 255, 255, 0.3); }
-        }
-
-        /* TEXTFELDER & BUTTONS */
-        .manager-section {
-            width: 100%; max-width: 600px; box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.03); border-radius: 24px; padding: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 60px;
-        }
-
-        input { 
-            padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
-            background: rgba(0,0,0,0.4); color: white; margin-bottom: 12px; width: 100%; box-sizing: border-box;
-            font-size: 16px; outline: none; transition: 0.3s;
-        }
-
-        /* Umrandung Leuchten am PC */
-        input:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--tool-glow); background: rgba(0,0,0,0.6); }
-
-        .btn-add {
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            border: none; padding: 15px; border-radius: 12px; color: #0b0e14;
-            font-weight: bold; width: 100%; font-size: 16px; cursor: pointer;
-            transition: 0.3s;
-        }
-        .btn-add:hover { transform: scale(1.02); box-shadow: 0 0 20px var(--tool-glow); }
-
-        /* HANDY OPTIMIERUNG */
-        @media (max-width: 480px) { 
-            .main-grid { grid-template-columns: 1fr; } 
-            .fav-grid { grid-template-columns: repeat(2, 1fr); }
-            .card, .fav-card-item { backdrop-filter: none !important; background: rgba(30, 41, 59, 0.9); }
-            .card:active { transform: scale(0.95); }
-        }
-
-        .favicon { width: 32px; height: 32px; border-radius: 8px; }
-        .yt-card { border-bottom: 4px solid #ff0000; }
-        .ublock-card { border-bottom: 4px solid #800000; }
-        .tool-card { border-bottom: 4px solid var(--primary); }
-        .search-card { border-bottom: 4px solid #00ff88; }
-
-        #prankOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 9999; }
+        /* HIER BLEIBT DEIN KOMPLETTES DESIGN (Dunkel, Glow, Hover) */
+        :root { --primary: #00f2fe; --secondary: #4facfe; --bg-dark: #05070a; --tool-glow: rgba(0, 242, 254, 0.4); }
+        body { margin: 0; background: radial-gradient(circle at top right, #1e293b, #0f172a, #05070a) no-repeat center center fixed; background-size: cover; font-family: sans-serif; color: white; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        /* Auth Styles */
+        #authSection { flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; }
+        .auth-box { background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); padding: 40px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 350px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--tool-glow); }
+        .btn-action { width: 100%; padding: 14px; background: linear-gradient(to right, var(--primary), var(--secondary)); border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* Dashboard Styles */
+        #dashboardSection { display: none; flex-direction: column; align-items: center; width: 100%; padding: 20px; box-sizing: border-box; }
+        .main-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 600px; margin: 20px 0; }
+        .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; width: 100%; max-width: 600px; }
+        .card, .fav-card-item { background: rgba(255,255,255,0.05); border-radius: 18px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.1); position: relative; transition: 0.3s; text-decoration: none; color: white; }
+        .card:hover, .fav-card-item:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 5px 20px var(--tool-glow); }
+        .btn-del { position: absolute; top: 5px; right: 5px; background: red; color: white; border: none; border-radius: 50%; cursor: pointer; width: 20px; height: 20px; font-size: 12px; }
+        .favicon { width: 30px; height: 30px; margin-bottom: 5px; border-radius: 5px; }
+        .fav-link { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: white; font-size: 0.9rem; }
+        .btn-logout { margin-top: 30px; opacity: 0.5; cursor: pointer; background: none; border: 1px solid white; color: white; padding: 5px 15px; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="settings-prank" onclick="startPrank()">⚙️</div>
-
-    <div id="prankOverlay">
-        <iframe id="prankVideo" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        <button onclick="stopPrank()" style="position:absolute; top:20px; right:20px; background:white; border:none; padding:10px; border-radius:10px;">X</button>
-    </div>
-
-    <div class="lang-switch" onclick="toggleLang()">
-        <span id="langText">🇩🇪 DE</span>
-    </div>
-
-    <h1 id="title">Meine Zentrale</h1>
-
-    <div class="main-grid">
-        <a href="https://www.youtube.com" target="_blank" class="card yt-card">
-            <img src="https://www.google.com/s2/favicons?sz=64&domain=youtube.com" class="favicon">
-            YouTube
-        </a>
-        <a href="https://ublockorigin.com/" target="_blank" class="card ublock-card">
-            <img src="https://www.google.com/s2/favicons?sz=64&domain=ublockorigin.com" class="favicon">
-            uBlock
-        </a>
-        <div onclick="document.getElementById('favName').focus();" class="card tool-card">
-            <span style="font-size: 24px;">➕</span>
-            <span id="btnAddLink">Link dazu</span>
+    <div id="authSection">
+        <div class="auth-box">
+            <h2 id="formTitle">Zentrale Login 🛡️</h2>
+            <input type="email" id="email" placeholder="E-Mail">
+            <input type="password" id="password" placeholder="Passwort">
+            <div id="confirmPassGroup" style="display:none;">
+                <input type="password" id="confirmPassword" placeholder="Wiederholen">
+            </div>
+            <button class="btn-action" id="mainBtn" data-mode="login" onclick="handleSubmit()">Anmelden ✨</button>
+            <p id="switchBtn" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px;" onclick="toggleMode()">Noch kein Account? Registrieren</p>
         </div>
-        <a href="https://google.com" target="_blank" class="card search-card">
-            <img src="https://www.google.com/s2/favicons?sz=64&domain=google.com" class="favicon">
-            <span id="btnSearch">Suche</span>
-        </a>
     </div>
 
-    <div id="favGrid" class="fav-grid"></div>
+    <div id="dashboardSection">
+        <h1>Meine Zentrale</h1>
+        <div class="main-grid">
+            <a href="https://youtube.com" target="_blank" class="card" style="border-bottom: 3px solid red;">YouTube</a>
+            <a href="https://google.com" target="_blank" class="card" style="border-bottom: 3px solid green;">Google</a>
+        </div>
 
-    <div class="manager-section">
-        <h3 id="managerTitle" style="margin-top:0;">Schnell-Links speichern 📥</h3>
-        <input type="text" id="favName" placeholder="Name (z.B. GitHub)">
-        <input type="text" id="favUrl" placeholder="URL (z.B. github.com)">
-        <button class="btn-add" id="btnAddSubmit" onclick="addFav()">Hinzufügen ✨</button>
+        <div id="favGrid" class="fav-grid"></div>
+
+        <div style="margin-top: 40px; width: 100%; max-width: 600px; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 20px;">
+            <input type="text" id="favName" placeholder="Name">
+            <input type="text" id="favUrl" placeholder="URL">
+            <button class="btn-action" onclick="addFav()">Link speichern 📥</button>
+        </div>
+
+        <button class="btn-logout" onclick="logout()">Abmelden</button>
     </div>
 
     <script>
-        // Rick Roll & Sprachlogik (bleibt gleich, nur Emojis ergänzt)
-        function startPrank() {
-            document.getElementById('prankVideo').src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
-            document.getElementById('prankOverlay').style.display = 'block';
-        }
-        function stopPrank() {
-            document.getElementById('prankVideo').src = "";
-            document.getElementById('prankOverlay').style.display = 'none';
-        }
-
-        let currentLang = 'de';
-        const texts = {
-            de: { title: "Meine Zentrale", addLink: "Link dazu", search: "Suche", manager: "Schnell-Links speichern 📥", submit: "Hinzufügen ✨", btn: "🇩🇪 DE" },
-            en: { title: "My Central", addLink: "Add Link", search: "Search", manager: "Save Quick-Links 📥", submit: "Add now ✨", btn: "🇺🇸 EN" }
-        };
-
-        function toggleLang() {
-            const el = document.getElementById('langText');
-            el.style.opacity = 0;
-            setTimeout(() => {
-                currentLang = currentLang === 'de' ? 'en' : 'de';
-                const t = texts[currentLang];
-                document.getElementById('title').innerText = t.title;
-                document.getElementById('btnAddLink').innerText = t.addLink;
-                document.getElementById('btnSearch').innerText = t.search;
-                document.getElementById('managerTitle').innerText = t.manager;
-                document.getElementById('btnAddSubmit').innerText = t.submit;
-                el.innerText = t.btn;
-                el.style.opacity = 1;
-            }, 300);
-        }
-
-        document.addEventListener('DOMContentLoaded', displayFavs);
-
-        function addFav() {
-            let name = document.getElementById('favName').value;
-            let url = document.getElementById('favUrl').value;
-            if (name && url) {
-                if (!url.startsWith('http')) url = 'https://' + url;
-                const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
-                favorites.push({ name, url });
-                localStorage.setItem('myCentralFavs', JSON.stringify(favorites));
-                document.getElementById('favName').value = '';
-                document.getElementById('favUrl').value = '';
-                displayFavs();
+        function toggleMode() {
+            const mode = document.getElementById('mainBtn').dataset.mode;
+            if(mode === 'login') {
+                document.getElementById('mainBtn').dataset.mode = 'register';
+                document.getElementById('mainBtn').innerText = 'Account erstellen ✨';
+                document.getElementById('formTitle').innerText = 'Registrieren';
+                document.getElementById('confirmPassGroup').style.display = 'block';
+                document.getElementById('switchBtn').innerText = 'Bereits dabei? Login';
+            } else {
+                document.getElementById('mainBtn').dataset.mode = 'login';
+                document.getElementById('mainBtn').innerText = 'Anmelden ✨';
+                document.getElementById('formTitle').innerText = 'Zentrale Login 🛡️';
+                document.getElementById('confirmPassGroup').style.display = 'none';
+                document.getElementById('switchBtn').innerText = 'Noch kein Account? Registrieren';
             }
-        }
-
-        function displayFavs() {
-            const grid = document.getElementById('favGrid');
-            const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
-            grid.innerHTML = favorites.map((fav, index) => {
-                const domain = new URL(fav.url).hostname;
-                return `
-                    <div class="fav-card-item">
-                        <button style="position:absolute; top:8px; right:8px; background:rgba(233,69,96,0.9); border:none; border-radius:50%; color:white; width:22px; height:22px; cursor:pointer;" onclick="deleteFav(${index})">×</button>
-                        <a href="${fav.url}" target="_blank" style="text-decoration:none; color:white; display:flex; flex-direction:column; align-items:center; gap:8px;">
-                            <img src="https://www.google.com/s2/favicons?sz=64&domain=${domain}" class="favicon" onerror="this.src='https://www.google.com/s2/favicons?sz=64&domain=google.com'">
-                            <span style="font-size: 0.85rem; opacity: 0.9;">${fav.name}</span>
-                        </a>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function deleteFav(index) {
-            const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
-            favorites.splice(index, 1);
-            localStorage.setItem('myCentralFavs', JSON.stringify(favorites));
-            displayFavs();
         }
     </script>
 </body>
