@@ -11,34 +11,29 @@
             --bg-dark: #05070a;
             --bg-medium: #0f172a;
             --bg-light: #1e293b;
+            --yt-glow: rgba(255, 0, 0, 0.4);
+            --ublock-glow: rgba(128, 0, 0, 0.4);
+            --tool-glow: rgba(0, 242, 254, 0.4);
+            --search-glow: rgba(0, 255, 136, 0.4);
         }
 
-        /* FIX: Hintergrund deckt alles ab und bewegt sich nicht mit */
-        html, body {
-            margin: 0; padding: 0;
-            width: 100%; min-height: 100%;
-            background-color: var(--bg-dark);
-        }
+        html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; background-color: var(--bg-dark); }
 
         body {
             padding: 15px; box-sizing: border-box;
             background: radial-gradient(circle at top right, var(--bg-light), var(--bg-medium), var(--bg-dark)) no-repeat center center fixed;
-            background-size: cover;
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-size: cover; font-family: 'Segoe UI', Roboto, sans-serif;
             display: flex; flex-direction: column; align-items: center; color: white;
             position: relative; overflow-x: hidden;
         }
 
-        /* Rick Roll Overlay */
-        #prankOverlay {
-            display: none; position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%; background: black; z-index: 9999;
-        }
+        /* Prank Overlay */
+        #prankOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 9999; }
 
-        /* Prank-Button jetzt oben rechts, sehr dezent */
+        /* Prank-Button noch dezentraler (fast unsichtbar) */
         .settings-prank {
-            position: absolute; top: 22px; right: 85px; /* Neben dem DE/EN Button */
-            font-size: 16px; color: rgba(255, 255, 255, 0.1);
+            position: absolute; top: 22px; right: 85px;
+            font-size: 16px; color: rgba(255, 255, 255, 0.05); /* Sehr transparent */
             cursor: pointer; z-index: 1000; text-decoration: none;
         }
 
@@ -47,42 +42,42 @@
             background: rgba(255, 255, 255, 0.05);
             padding: 8px 12px; border-radius: 10px;
             cursor: pointer; backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 14px; z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; z-index: 100;
         }
 
         h1 { 
             margin-top: 60px; font-weight: 300; letter-spacing: 2px; text-align: center;
-            font-size: 1.8rem; text-shadow: 0 0 15px rgba(0,242,254,0.2);
+            font-size: 1.8rem; text-shadow: 0 0 15px var(--tool-glow);
         }
 
-        .main-grid {
-            display: grid; grid-template-columns: repeat(2, 1fr);
-            gap: 15px; width: 100%; max-width: 600px; margin: 20px 0;
-        }
+        .main-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 600px; margin: 20px 0; }
+        .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; width: 100%; max-width: 600px; margin-bottom: 30px; }
 
-        .fav-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px; width: 100%; max-width: 600px; margin-bottom: 30px;
-        }
+        @media (max-width: 480px) { .main-grid { grid-template-columns: 1fr; } .fav-grid { grid-template-columns: repeat(2, 1fr); } }
 
-        @media (max-width: 480px) {
-            .main-grid { grid-template-columns: 1fr; }
-            .fav-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
+        /* ALLGEMEINE KARTEN-LOGIK */
         .card, .fav-card-item {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(15px);
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 18px; padding: 18px;
             text-align: center; color: white; font-weight: bold;
-            transition: 0.3s; box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
             cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;
             text-decoration: none; position: relative;
         }
 
-        .card:active { transform: scale(0.96); }
+        /* INDIVIDUELLE LEUCHT-EFFEKTE BEIM HOVER & KLICK */
+        .yt-card:hover { border-color: #ff0000; box-shadow: 0 10px 30px var(--yt-glow); transform: translateY(-3px); }
+        .ublock-card:hover { border-color: #800000; box-shadow: 0 10px 30px var(--ublock-glow); transform: translateY(-3px); }
+        .tool-card:hover { border-color: var(--primary); box-shadow: 0 10px 30px var(--tool-glow); transform: translateY(-3px); }
+        .search-card:hover { border-color: #00ff88; box-shadow: 0 10px 30px var(--search-glow); transform: translateY(-3px); }
+        
+        /* Favoriten Leuchten */
+        .fav-card-item:hover { border-color: var(--primary); box-shadow: 0 10px 30px var(--tool-glow); transform: translateY(-3px); }
+
+        /* Klick-Effekt für Handy (Puls) */
+        .card:active, .fav-card-item:active { transform: scale(0.96); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
 
         .favicon { width: 30px; height: 30px; border-radius: 6px; }
         .yt-card { border-bottom: 3px solid #ff0000; }
@@ -92,23 +87,23 @@
 
         .manager-section {
             width: 100%; max-width: 600px; box-sizing: border-box;
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 20px; padding: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 50px; /* Platz unten */
+            background: rgba(255, 255, 255, 0.02); border-radius: 20px; padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 50px;
         }
 
         input { 
             padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); 
             background: rgba(0,0,0,0.3); color: white; margin-bottom: 10px; width: 100%; box-sizing: border-box;
-            font-size: 16px; outline: none;
+            font-size: 16px; outline: none; transition: 0.2s;
         }
+        input:focus { border-color: var(--primary); background: rgba(0,0,0,0.5); }
 
         .btn-add {
             background: linear-gradient(to right, var(--primary), var(--secondary));
             border: none; padding: 14px; border-radius: 10px; color: #0b0e14;
-            font-weight: bold; cursor: pointer; width: 100%; font-size: 16px;
+            font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.2s;
         }
+        .btn-add:hover { opacity: 0.9; transform: scale(0.99); }
 
         .btn-del {
             position: absolute; top: 5px; right: 5px;
@@ -125,7 +120,7 @@
 
     <div id="prankOverlay">
         <iframe id="prankVideo" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        <button onclick="stopPrank()" style="position:absolute; top:20px; right:20px; background:white; border:none; padding:10px; border-radius:10px; font-weight:bold;">X</button>
+        <button onclick="stopPrank()" style="position:absolute; top:20px; right:20px; background:white; border:none; padding:10px; border-radius:10px; font-weight:bold; opacity: 0.3;">X</button>
     </div>
 
     <div class="lang-switch" onclick="toggleLang()" id="langBtn">🇩🇪 DE</div>
@@ -161,26 +156,23 @@
     </div>
 
     <script>
+        // Prank & Favoriten-Logik bleibt gleich
         function startPrank() {
             const overlay = document.getElementById('prankOverlay');
             const video = document.getElementById('prankVideo');
             video.src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
             overlay.style.display = 'block';
         }
-
         function stopPrank() {
             const overlay = document.getElementById('prankOverlay');
             const video = document.getElementById('prankVideo');
-            video.src = "";
-            overlay.style.display = 'none';
+            video.src = ""; overlay.style.display = 'none';
         }
-
         let currentLang = 'de';
         const texts = {
             de: { title: "Meine Zentrale", addLink: "Link dazu", search: "Suche", manager: "Schnell-Links speichern", submit: "Hinzufügen", btn: "🇩🇪 DE" },
             en: { title: "My Central", addLink: "Add Link", search: "Search", manager: "Save Quick-Links", submit: "Add now", btn: "🇺🇸 EN" }
         };
-
         function toggleLang() {
             currentLang = currentLang === 'de' ? 'en' : 'de';
             const t = texts[currentLang];
@@ -191,9 +183,7 @@
             document.getElementById('btnAddSubmit').innerText = t.submit;
             document.getElementById('langBtn').innerText = t.btn;
         }
-
         document.addEventListener('DOMContentLoaded', displayFavs);
-
         function addFav() {
             let name = document.getElementById('favName').value;
             let url = document.getElementById('favUrl').value;
@@ -207,7 +197,6 @@
                 displayFavs();
             }
         }
-
         function displayFavs() {
             const grid = document.getElementById('favGrid');
             const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
@@ -224,7 +213,6 @@
                 `;
             }).join('');
         }
-
         function deleteFav(index) {
             const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
             favorites.splice(index, 1);
