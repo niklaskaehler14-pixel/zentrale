@@ -22,27 +22,8 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        window.openResetModal = () => {
-    document.getElementById('resetModal').style.display = 'flex';
-};
 
-window.closeResetModal = () => {
-    document.getElementById('resetModal').style.display = 'none';
-};
-
-window.sendResetEmail = async () => {
-    const email = document.getElementById('resetEmailInput').value;
-    if (!email) return alert("Bitte E-Mail eingeben!");
-    try {
-        const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
-        await sendPasswordResetEmail(auth, email, actionCodeSettings);
-        alert("E-Mail gesendet! Schau in dein Postfach.");
-        closeResetModal();
-    } catch (e) { alert(e.message); }
-};
-
-
-        // --- NUR DIESE DREI FUNKTIONEN SIND NEU FÜR DAS FENSTER ---
+        // --- HIER SIND DIE FUNKTIONEN FÜR DEIN FENSTER ---
         window.openResetModal = () => {
             document.getElementById('resetModal').style.display = 'flex';
         };
@@ -55,13 +36,16 @@ window.sendResetEmail = async () => {
             const email = document.getElementById('resetEmailInput').value;
             if (!email) return alert("Bitte E-Mail eingeben!");
             try {
-                const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+                const actionCodeSettings = { 
+                    url: "https://niklaskaehler14-pixel.github.io/zentrale/", 
+                    handleCodeInApp: true 
+                };
                 await sendPasswordResetEmail(auth, email, actionCodeSettings);
                 alert("E-Mail gesendet! Check dein Postfach.");
                 closeResetModal();
             } catch (e) { alert(e.message); }
         };
-        // -------------------------------------------------------
+        // -----------------------------------------------
 
         let currentLang = 'de';
         const translations = {
@@ -179,11 +163,9 @@ window.sendResetEmail = async () => {
         <div class="login-card">
             <h2 data-t="login">Anmelden</h2>
             <input type="email" id="email" placeholder="E-Mail">
-            <span class="forgot-link" onclick="openResetModal()" data-t="forgot" style="cursor:pointer; color:#4facfe;">Passwort vergessen?</span>
-
+            <input type="password" id="password" placeholder="Passwort">
             
-            <<span class="forgot-link" onclick="openResetModal()" data-t="forgot" style="cursor:pointer; color:#4facfe;">Passwort vergessen?</span>
-
+            <span class="forgot-link" onclick="openResetModal()" data-t="forgot" style="cursor:pointer; color:#4facfe;">Passwort vergessen?</span>
             
             <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()" data-t="login">Anmelden</button>
             <p onclick="toggleMode()" style="cursor:pointer; font-size: 0.8rem; opacity: 0.6;" data-t="switch">Registrieren</p>
@@ -201,13 +183,21 @@ window.sendResetEmail = async () => {
         </div>
     </div>
 
+    <div id="settingsModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000;">
+        <div style="background: #1e293b; padding: 30px; border-radius: 20px; width: 280px; text-align: center;">
+            <h2 data-t="settings">Einstellungen</h2>
+            <button class="btn-main" onclick="logout()" data-t="logout" style="background: #ef4444;">Abmelden</button>
+            <p onclick="toggleSettings()" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.5;">Schließen</p>
+        </div>
+    </div>
+
     <div id="resetModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000;">
         <div style="background: #1e293b; padding: 30px; border-radius: 20px; width: 280px; text-align: center; border: 1px solid #4facfe;">
-            <h3 style="margin-top: 0;">Passwort zurück</h3>
-            <p style="font-size: 0.75rem; opacity: 0.7;">Gib deine E-Mail ein:</p>
-            <input type="email" id="resetEmailInput" placeholder="E-Mail">
+            <h3 style="margin-top: 0; color: white;">Passwort zurück</h3>
+            <p style="font-size: 0.75rem; opacity: 0.7; color: white;">Gib deine E-Mail ein:</p>
+            <input type="email" id="resetEmailInput" placeholder="E-Mail" style="width:100%; padding:10px; margin:10px 0; border-radius:8px; border:none; background:#0f172a; color:white;">
             <button class="btn-main" onclick="sendResetEmail()">Link senden</button>
-            <p onclick="closeResetModal()" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.5;">Abbrechen</p>
+            <p onclick="closeResetModal()" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.5; color: white;">Abbrechen</p>
         </div>
     </div>
 
