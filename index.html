@@ -23,7 +23,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- NEU: PASSWORT RESET FUNKTIONEN ---
+        // --- NUR DIESE DREI FUNKTIONEN SIND NEU FÜR DAS FENSTER ---
         window.openResetModal = () => {
             document.getElementById('resetModal').style.display = 'flex';
         };
@@ -42,12 +42,12 @@
                 closeResetModal();
             } catch (e) { alert(e.message); }
         };
-        // --------------------------------------
+        // -------------------------------------------------------
 
         let currentLang = 'de';
         const translations = {
-            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche", forgot: "Passwort vergessen?" },
-            en: { title: "My Central", login: "Login", reg: "Register", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search", forgot: "Forgot password?" }
+            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", google: "Google Login", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche", forgot: "Passwort vergessen?" },
+            en: { title: "My Central", login: "Login", reg: "Register", google: "Google Login", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search", forgot: "Forgot password?" }
         };
 
         window.toggleLang = () => {
