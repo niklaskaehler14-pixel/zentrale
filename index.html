@@ -7,7 +7,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -26,8 +26,8 @@
 
         let currentLang = 'de';
         const translations = {
-            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", google: "Google Login", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche" },
-            en: { title: "My Central", login: "Login", reg: "Register", google: "Google Login", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search" }
+            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", google: "Google Login", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche", forgot: "Passwort vergessen?" },
+            en: { title: "My Central", login: "Login", reg: "Register", google: "Google Login", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search", forgot: "Forgot password?" }
         };
 
         window.toggleLang = () => {
@@ -55,6 +55,16 @@
         };
 
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { alert(e.message); } };
+        
+        window.resetPassword = async () => {
+            const email = document.getElementById('email').value;
+            if (!email) return alert("Bitte E-Mail eingeben!");
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("E-Mail zum Zurücksetzen wurde gesendet!");
+            } catch (e) { alert(e.message); }
+        };
+
         window.handleSubmit = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
@@ -64,6 +74,7 @@
                 else await signInWithEmailAndPassword(auth, email, pass);
             } catch (e) { alert(e.message); }
         };
+        
         window.logout = () => { signOut(auth); toggleSettings(); };
 
         onAuthStateChanged(auth, (user) => {
@@ -195,6 +206,9 @@
 
         #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; }
         .login-card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 25px; width: 320px; text-align: center; }
+        
+        .forgot-link { font-size: 0.8rem; color: #4facfe; cursor: pointer; display: block; margin: 10px 0; opacity: 0.8; }
+        .forgot-link:hover { text-decoration: underline; opacity: 1; }
     </style>
 </head>
 <body>
@@ -209,6 +223,9 @@
             <h2 data-t="login">Anmelden</h2>
             <input type="email" id="email" placeholder="E-Mail">
             <input type="password" id="password" placeholder="Passwort">
+            
+            <span class="forgot-link" onclick="resetPassword()" data-t="forgot">Passwort vergessen?</span>
+            
             <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()" data-t="login">Anmelden</button>
             <button class="btn-main" style="background:white; color:#333; margin-top:10px;" onclick="loginWithGoogle()">Google Login</button>
             <p onclick="toggleMode()" id="switchBtn" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.6;" data-t="switch">Noch kein Account? Registrieren</p>
@@ -250,7 +267,7 @@
     <div id="settingsModal" onclick="if(event.target == this) toggleSettings()">
         <div class="modal-content">
             <h3 data-t="settings">Einstellungen</h3>
-            <p id="userEmail" style="opacity: 0.6;"></p>
+            <p id="userEmail" style="opacity: 0.6; margin-bottom: 25px;"></p>
             <button class="btn-main" style="background: #ef4444;" onclick="logout()" data-t="logout">Abmelden</button>
         </div>
     </div>
