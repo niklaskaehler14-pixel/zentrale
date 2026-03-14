@@ -27,8 +27,8 @@
         // --- ÜBERSETZUNGS-LOGIK ---
         let currentLang = 'de';
         const translations = {
-            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", google: "Google Login", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche", music: "Musik" },
-            en: { title: "My Central", login: "Login", reg: "Register", google: "Google Login", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search", music: "Music" }
+            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", google: "Google Login", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche" },
+            en: { title: "My Central", login: "Login", reg: "Register", google: "Google Login", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search" }
         };
 
         window.toggleLang = () => {
@@ -95,18 +95,21 @@
             onSnapshot(doc(db, "users", uid), (doc) => {
                 const grid = document.getElementById('dynamicGrid');
                 const links = doc.exists() ? doc.data().links : [];
-                grid.innerHTML = links.map((l, i) => `
-                    <div class="card music-style">
-                        <button class="btn-del" onclick="deleteFav(${i})">×</button>
-                        <a href="${l.url}" target="_blank">
-                            <img src="https://www.google.com/s2/favicons?sz=64&domain=${new URL(l.url).hostname}" class="icon">
-                            <span>${l.name}</span>
-                        </a>
-                    </div>`).join('');
+                grid.innerHTML = links.map((l, i) => {
+                    // Automatisches Icon für jede Webseite laden
+                    const domain = new URL(l.url).hostname;
+                    return `
+                        <div class="card custom-fav-card">
+                            <button class="btn-del" onclick="deleteFav(${i})">×</button>
+                            <a href="${l.url}" target="_blank" class="fav-content">
+                                <img src="https://www.google.com/s2/favicons?sz=128&domain=${domain}" class="icon">
+                                <span class="fav-label">${l.name}</span>
+                            </a>
+                        </div>`;
+                }).join('');
             });
         }
 
-        // --- SETTINGS MODAL ANIMATION ---
         window.toggleSettings = () => {
             const modal = document.getElementById('settingsModal');
             if (modal.style.display === 'flex') {
@@ -146,22 +149,27 @@
             background: rgba(255,255,255,0.07); border-radius: 18px; padding: 25px;
             display: flex; flex-direction: column; align-items: center; gap: 10px;
             text-decoration: none; color: white; position: relative; border-bottom: 3px solid transparent;
-            transition: 0.3s;
+            transition: 0.3s; cursor: pointer;
         }
         
-        /* Musik Kachel Style vom Bild */
-        .music-style {
+        /* Neues Design für gespeicherte Links (Kacheln ohne Unterstrich-Text) */
+        .custom-fav-card {
             background: rgba(255,255,255,0.1); 
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            padding: 15px;
         }
+        .custom-fav-card:hover { transform: scale(1.05); background: rgba(255,255,255,0.15); border-color: var(--glow-cyan); }
+
+        .fav-content { text-decoration: none; color: white; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .fav-label { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
 
         .yt { border-color: #ff4444; box-shadow: 0 8px 15px var(--glow-red); }
         .tool { border-color: #4facfe; box-shadow: 0 8px 15px var(--glow-cyan); }
         .search { border-color: #00ff88; box-shadow: 0 8px 15px var(--glow-green); }
 
-        .icon { width: 40px; height: 40px; }
-        .btn-del { position: absolute; top: 8px; right: 8px; background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; }
+        .icon { width: 45px; height: 45px; object-fit: contain; }
+        .btn-del { position: absolute; top: 5px; right: 8px; background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 1.2rem; z-index: 10; }
 
         /* Modal Animation */
         #settingsModal {
@@ -170,14 +178,9 @@
             opacity: 0; transition: 0.3s ease;
         }
         #settingsModal.active { opacity: 1; backdrop-filter: blur(8px); }
-        
-        .modal-content {
-            background: #1e293b; padding: 30px; border-radius: 25px; width: 280px; text-align: center;
-            transform: scale(0.8); transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 25px; width: 280px; text-align: center; transform: scale(0.8); transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         #settingsModal.active .modal-content { transform: scale(1); }
 
-        /* Restlicher Style bleibt wie davor */
         #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; }
         .login-card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 25px; width: 320px; text-align: center; }
         input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; background: #1e293b; color: white; box-sizing: border-box; }
