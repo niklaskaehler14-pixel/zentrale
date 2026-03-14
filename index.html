@@ -7,9 +7,10 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Deine Konfiguration
         const firebaseConfig = {
             apiKey: "AIzaSyCeuZLf52JxlN_V3T9_sFqMDccHN8hDP9w",
             authDomain: "meine-zentrale.firebaseapp.com",
@@ -22,8 +23,18 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
 
-        // Auth Logik
+        // Google Login Funktion
+        window.loginWithGoogle = async () => {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (e) {
+                alert("Google Login Fehler: " + e.message);
+            }
+        };
+
+        // E-Mail Auth Logik
         window.handleSubmit = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
@@ -99,7 +110,7 @@
         :root {
             --primary: #00f2fe; --secondary: #4facfe;
             --bg-dark: #05070a; --bg-light: #1e293b;
-            --yt-glow: rgba(255, 0, 0, 0.4); --tool-glow: rgba(0, 242, 254, 0.4);
+            --tool-glow: rgba(0, 242, 254, 0.4);
         }
 
         body {
@@ -109,101 +120,74 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* --- LOGIN DESIGN --- */
         #authSection { display: flex; justify-content: center; align-items: center; height: 100vh; width: 100%; }
         .auth-box { 
             background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); 
-            padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
-            width: 90%; max-width: 380px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            padding: 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
+            width: 90%; max-width: 380px; text-align: center;
         }
 
-        /* --- DASHBOARD DESIGN --- */
-        #dashboardSection { display: none; flex-direction: column; align-items: center; width: 100%; padding: 20px; box-sizing: border-box; }
-        
-        .settings-prank { position: absolute; top: 20px; right: 90px; font-size: 18px; color: rgba(255,255,255,0.05); cursor: pointer; }
-        .lang-switch { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 12px; cursor: pointer; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-
-        h1 { margin-top: 60px; font-weight: 300; letter-spacing: 2px; text-shadow: 0 0 15px var(--tool-glow); }
-
-        .main-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 600px; margin: 25px 0; }
-        .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; width: 100%; max-width: 600px; }
-
-        .card, .fav-card-item {
-            background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); border-radius: 20px;
-            padding: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s;
-            text-decoration: none; color: white; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 10px;
+        .btn-google {
+            width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);
+            background: white; color: #444; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s;
         }
+        .btn-google:hover { background: #f1f1f1; transform: scale(1.02); }
 
-        @media (min-width: 481px) {
-            .card:hover, .fav-card-item:hover { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 10px 30px var(--tool-glow); }
-            .yt-card:hover { border-color: red; box-shadow: 0 10px 30px var(--yt-glow); }
-        }
-
-        @media (max-width: 480px) {
-            .main-grid { grid-template-columns: 1fr; }
-            .card, .fav-card-item { backdrop-filter: none; background: rgba(30, 41, 59, 0.9); }
-        }
+        .divider { margin: 20px 0; display: flex; align-items: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; }
+        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.1); margin: 0 10px; }
 
         input { 
-            width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
-            background: rgba(0,0,0,0.4); color: white; outline: none; transition: 0.3s; box-sizing: border-box;
+            width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
+            background: rgba(0,0,0,0.4); color: white; box-sizing: border-box;
         }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--tool-glow); }
 
         .btn-action { 
             width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; 
-            background: linear-gradient(to right, var(--primary), var(--secondary)); cursor: pointer; transition: 0.3s;
+            background: linear-gradient(to right, var(--primary), var(--secondary)); cursor: pointer; margin-top: 10px;
         }
-        .btn-action:hover { transform: scale(1.02); box-shadow: 0 0 20px var(--tool-glow); }
 
-        .favicon { width: 32px; height: 32px; border-radius: 8px; }
-        .btn-del { position: absolute; top: 8px; right: 8px; background: rgba(255,0,0,0.7); border: none; color: white; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; }
-        
-        #prankOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 9999; }
+        #dashboardSection { display: none; flex-direction: column; align-items: center; width: 100%; padding: 20px; box-sizing: border-box; }
+        .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; width: 100%; max-width: 600px; margin-top: 20px; }
+        .fav-card-item { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); position: relative; display: flex; flex-direction: column; align-items: center; text-decoration: none; color: white; }
+        .favicon { width: 32px; height: 32px; margin-bottom: 10px; }
+        .btn-del { position: absolute; top: 5px; right: 5px; background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
     <div id="authSection">
         <div class="auth-box">
-            <h2 id="formTitle">Zentrale Login 🛡️</h2>
+            <h2>Zentrale Login 🛡️</h2>
+            
+            <button class="btn-google" onclick="loginWithGoogle()">
+                <img src="https://www.google.com/s2/favicons?sz=32&domain=google.com" width="18">
+                Mit Google anmelden
+            </button>
+
+            <div class="divider">oder mit E-Mail</div>
+
             <input type="email" id="email" placeholder="E-Mail">
             <input type="password" id="password" placeholder="Passwort">
             <div id="confirmPassGroup" style="display:none;"><input type="password" id="confirmPassword" placeholder="Wiederholen"></div>
+            
             <button class="btn-action" id="mainBtn" data-mode="login" onclick="handleSubmit()">Anmelden ✨</button>
-            <p onclick="toggleMode()" id="switchBtn" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px;">Noch kein Account? Registrieren</p>
+            <p onclick="toggleMode()" id="switchBtn" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.6;">Noch kein Account? Registrieren</p>
         </div>
     </div>
 
     <div id="dashboardSection">
-        <div class="settings-prank" onclick="startPrank()">⚙️</div>
-        <div class="lang-switch" onclick="toggleLang()"><span id="langText">🇩🇪 DE</span></div>
-        <h1 id="title">Meine Zentrale</h1>
-
-        <div class="main-grid">
-            <a href="https://youtube.com" target="_blank" class="card yt-card" style="border-bottom: 4px solid red;">
-                <img src="https://www.google.com/s2/favicons?sz=64&domain=youtube.com" class="favicon">YouTube
-            </a>
-            <a href="https://google.com" target="_blank" class="card" style="border-bottom: 4px solid #00ff88;">
-                <img src="https://www.google.com/s2/favicons?sz=64&domain=google.com" class="favicon">Suche
-            </a>
-        </div>
-
+        <h1>Meine Zentrale</h1>
         <div id="favGrid" class="fav-grid"></div>
 
-        <div style="margin-top: 40px; width: 100%; max-width: 600px; background: rgba(255,255,255,0.03); padding: 25px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.05);">
-            <h3 id="managerTitle" style="margin-top:0;">Schnell-Links speichern 📥</h3>
+        <div style="margin-top: 40px; width: 100%; max-width: 600px; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 25px;">
+            <h3>Neuer Link 📥</h3>
             <input type="text" id="favName" placeholder="Name">
             <input type="text" id="favUrl" placeholder="URL">
             <button class="btn-action" onclick="addFav()">Hinzufügen ✨</button>
         </div>
 
-        <button onclick="logout()" style="margin-top:40px; background:none; border:1px solid rgba(255,255,255,0.2); color:white; padding:10px 20px; border-radius:12px; cursor:pointer; opacity:0.5;">Abmelden</button>
-    </div>
-
-    <div id="prankOverlay">
-        <iframe id="prankVideo" width="100%" height="100%" src="" frameborder="0" allow="autoplay"></iframe>
-        <button onclick="stopPrank()" style="position:absolute; top:20px; right:20px; padding:10px;">X</button>
+        <button onclick="logout()" style="margin-top:40px; background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer;">Abmelden</button>
     </div>
 
     <script>
@@ -212,27 +196,13 @@
             const mode = m.dataset.mode;
             if(mode === 'login') {
                 m.dataset.mode = 'register'; m.innerText = 'Account erstellen ✨';
-                document.getElementById('formTitle').innerText = 'Registrieren';
                 document.getElementById('confirmPassGroup').style.display = 'block';
                 document.getElementById('switchBtn').innerText = 'Bereits dabei? Login';
             } else {
                 m.dataset.mode = 'login'; m.innerText = 'Anmelden ✨';
-                document.getElementById('formTitle').innerText = 'Zentrale Login 🛡️';
                 document.getElementById('confirmPassGroup').style.display = 'none';
                 document.getElementById('switchBtn').innerText = 'Noch kein Account? Registrieren';
             }
-        }
-
-        function startPrank() { document.getElementById('prankVideo').src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1"; document.getElementById('prankOverlay').style.display = 'block'; }
-        function stopPrank() { document.getElementById('prankVideo').src = ""; document.getElementById('prankOverlay').style.display = 'none'; }
-
-        let currentLang = 'de';
-        function toggleLang() {
-            const el = document.getElementById('langText');
-            currentLang = currentLang === 'de' ? 'en' : 'de';
-            document.getElementById('title').innerText = currentLang === 'de' ? "Meine Zentrale" : "My Central";
-            document.getElementById('managerTitle').innerText = currentLang === 'de' ? "Schnell-Links speichern 📥" : "Save Quick-Links 📥";
-            el.innerText = currentLang === 'de' ? "🇩🇪 DE" : "🇺🇸 EN";
         }
     </script>
 </body>
