@@ -10,7 +10,6 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Deine Firebase-Daten (unverändert)
         const firebaseConfig = {
             apiKey: "AIzaSyCeuZLf52JxlN_V3T9_sFqMDccHN8hDP9w",
             authDomain: "meine-zentrale.firebaseapp.com",
@@ -25,43 +24,30 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // Google Login Funktion
         window.loginWithGoogle = async () => {
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (e) {
-                alert("Google Login Fehler: " + e.message);
-            }
+            try { await signInWithPopup(auth, provider); } 
+            catch (e) { alert("Fehler: " + e.message); }
         };
 
-        // E-Mail Auth Logik
         window.handleSubmit = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
             const mode = document.getElementById('mainBtn').dataset.mode;
-            if (!email || !pass) return alert("Daten eingeben!");
             try {
                 if (mode === 'register') {
-                    const cPass = document.getElementById('confirmPassword').value;
-                    if (pass !== cPass) return alert("Passwörter ungleich!");
                     await createUserWithEmailAndPassword(auth, email, pass);
-                } else { await signInWithEmailAndPassword(auth, email, pass); }
+                } else {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                }
             } catch (e) { alert("Fehler: " + e.message); }
         };
 
         window.logout = () => signOut(auth);
 
         onAuthStateChanged(auth, (user) => {
-            const authSec = document.getElementById('authSection');
-            const dashSec = document.getElementById('dashboardSection');
-            if (user) {
-                authSec.style.display = 'none';
-                dashSec.style.display = 'flex';
-                loadLinks(user.uid);
-            } else {
-                authSec.style.display = 'flex';
-                dashSec.style.display = 'none';
-            }
+            document.getElementById('authSection').style.display = user ? 'none' : 'flex';
+            document.getElementById('dashboardSection').style.display = user ? 'block' : 'none';
+            if (user) loadLinks(user.uid);
         });
 
         window.addFav = async () => {
@@ -74,8 +60,6 @@
                 let links = snap.exists() ? snap.data().links : [];
                 links.push({ name, url });
                 await setDoc(docRef, { links });
-                document.getElementById('favName').value = '';
-                document.getElementById('favUrl').value = '';
             }
         };
 
@@ -89,157 +73,131 @@
 
         function loadLinks(uid) {
             onSnapshot(doc(db, "users", uid), (doc) => {
-                const grid = document.getElementById('favGrid');
+                const grid = document.getElementById('dynamicGrid');
                 const links = doc.exists() ? doc.data().links : [];
-                grid.innerHTML = links.map((l, i) => {
-                    const domain = new URL(l.url).hostname;
-                    return `
-                        <div class="fav-card-item">
-                            <button class="btn-del" onclick="deleteFav(${i})">×</button>
-                            <a href="${l.url}" target="_blank" class="fav-inner">
-                                <img src="https://www.google.com/s2/favicons?sz=64&domain=${domain}" class="favicon">
-                                <span>${l.name}</span>
-                            </a>
-                        </div>`;
-                }).join('');
+                grid.innerHTML = links.map((l, i) => `
+                    <div class="card dynamic-card">
+                        <button class="btn-del" onclick="deleteFav(${i})">×</button>
+                        <a href="${l.url}" target="_blank">
+                            <img src="https://www.google.com/s2/favicons?sz=64&domain=${new URL(l.url).hostname}" class="icon">
+                            <span>${l.name}</span>
+                        </a>
+                    </div>`).join('');
             });
         }
     </script>
 
     <style>
-        /* --- DEINE GESAMTEN SCHÖNEN LEUCHTEFFEKTE SIND WIEDER DA --- */
         :root {
-            --primary: #00f2fe; --secondary: #4facfe;
-            --bg-dark: #05070a; --bg-light: #1e293b;
-            --tool-glow: rgba(0, 242, 254, 0.4);
-            --yt-glow: rgba(255, 0, 0, 0.4);
+            --glow-cyan: rgba(0, 242, 254, 0.5);
+            --glow-red: rgba(255, 60, 60, 0.5);
+            --glow-green: rgba(60, 255, 60, 0.4);
         }
 
         body {
-            margin: 0; padding: 0; min-height: 100vh;
-            background: radial-gradient(circle at top right, var(--bg-light), #0f172a, var(--bg-dark)) no-repeat fixed;
-            background-size: cover; font-family: 'Segoe UI', sans-serif; color: white;
-            display: flex; flex-direction: column; align-items: center;
+            margin: 0; background: #0f172a; color: white;
+            font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center;
         }
 
-        /* --- LOGIN DESIGN (MIT GOOGLE) --- */
-        #authSection { display: flex; justify-content: center; align-items: center; height: 100vh; width: 100%; }
-        .auth-box { 
-            background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); 
-            padding: 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
-            width: 90%; max-width: 380px; text-align: center;
+        /* Sprach- & Settings-Bar */
+        .top-nav {
+            width: 100%; display: flex; justify-content: flex-end; padding: 15px; gap: 15px; box-sizing: border-box;
         }
+        .nav-icon { font-size: 1.5rem; cursor: pointer; opacity: 0.7; transition: 0.3s; }
+        .nav-icon:hover { opacity: 1; transform: rotate(45deg); }
 
-        .btn-google {
-            width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);
-            background: white; color: #444; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s;
+        /* Login */
+        #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .login-card { 
+            background: rgba(255,255,255,0.05); padding: 30px; border-radius: 25px; 
+            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); text-align: center; width: 320px;
         }
-        .btn-google:hover { background: #f1f1f1; transform: scale(1.02); }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; background: #1e293b; color: white; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #4facfe; color: white; font-weight: bold; cursor: pointer; }
+        .btn-google { background: white; color: #333; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        .divider { margin: 15px 0; display: flex; align-items: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; }
-        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.1); margin: 0 10px; }
+        /* Dashboard */
+        #dashboardSection { display: none; width: 90%; max-width: 600px; text-align: center; }
+        h1 { font-size: 2rem; margin: 20px 0; text-shadow: 0 0 10px var(--glow-cyan); }
 
-        input { 
-            width: 100%; padding: 14px; margin: 8px 0; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
-            background: rgba(0,0,0,0.4); color: white; box-sizing: border-box; outline: none; transition: 0.3s;
-        }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--tool-glow); }
-
-        .btn-action { 
-            width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; 
-            background: linear-gradient(to right, var(--primary), var(--secondary)); cursor: pointer; margin-top: 10px;
-        }
-
-        /* --- DASHBOARD DESIGN (MIT YouTube & Google) --- */
-        #dashboardSection { display: none; flex-direction: column; align-items: center; width: 100%; padding: 20px; box-sizing: border-box; }
-        
-        h1 { margin-top: 40px; font-weight: 300; letter-spacing: 2px; text-shadow: 0 0 15px var(--tool-glow); }
-
-        /* HEADER GRID MIT DEN LEUCHTEFFEKTEN */
-        .main-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 600px; margin: 25px 0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
         
         .card {
-            background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); border-radius: 20px;
-            padding: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s;
-            text-decoration: none; color: white; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 10px;
+            background: rgba(255,255,255,0.07); border-radius: 18px; padding: 25px;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            text-decoration: none; color: white; position: relative; border-bottom: 3px solid transparent;
+            transition: 0.3s;
         }
+        .card:hover { transform: translateY(-5px); }
+        .yt { border-color: #ff4444; box-shadow: 0 10px 20px var(--glow-red); }
+        .tool { border-color: #4facfe; box-shadow: 0 10px 20px var(--glow-cyan); }
+        .search { border-color: #00ff88; box-shadow: 0 10px 20px var(--glow-green); }
 
-        @media (min-width: 481px) {
-            .card:hover { transform: translateY(-8px); border-color: var(--primary); box-shadow: 0 10px 30px var(--tool-glow); }
-            .yt-card:hover { border-color: red; box-shadow: 0 10px 30px var(--yt-glow); }
-        }
+        .icon { width: 40px; height: 40px; }
+        .btn-del { position: absolute; top: 5px; right: 5px; background: none; border: none; color: gray; cursor: pointer; }
 
-        /* CLOUD FAV GRID */
-        .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; width: 100%; max-width: 600px; margin-top: 20px; }
-        .fav-card-item { background: rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); position: relative; display: flex; flex-direction: column; align-items: center; text-decoration: none; color: white; transition: 0.3s; }
-        .fav-card-item:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 5px 20px var(--tool-glow); }
-
-        .favicon { width: 32px; height: 32px; margin-bottom: 5px; }
-        .btn-del { position: absolute; top: 5px; right: 5px; background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 1.2rem; }
+        .add-section { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; margin-top: 30px; }
     </style>
 </head>
 <body>
 
+    <div class="top-nav">
+        <span class="nav-icon">🇩🇪</span>
+        <span class="nav-icon">⚙️</span>
+    </div>
+
     <div id="authSection">
-        <div class="auth-box">
-            <h2>Zentrale Login 🛡️</h2>
-            
-            <button class="btn-google" onclick="loginWithGoogle()">
-                <img src="https://www.google.com/s2/favicons?sz=32&domain=google.com" width="18">
-                Mit Google anmelden
-            </button>
-
-            <div class="divider">oder mit E-Mail</div>
-
+        <div class="login-card">
+            <h2>Zentrale Login</h2>
             <input type="email" id="email" placeholder="E-Mail">
             <input type="password" id="password" placeholder="Passwort">
-            <div id="confirmPassGroup" style="display:none;"><input type="password" id="confirmPassword" placeholder="Wiederholen"></div>
-            
-            <button class="btn-action" id="mainBtn" data-mode="login" onclick="handleSubmit()">Anmelden ✨</button>
-            <p onclick="toggleMode()" id="switchBtn" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.6;">Noch kein Account? Registrieren</p>
+            <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()">Anmelden</button>
+            <button class="btn-main btn-google" onclick="loginWithGoogle()">
+                <img src="https://www.google.com/s2/favicons?domain=google.com" width="18"> Google Login
+            </button>
+            <p onclick="toggleMode()" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px;">Noch kein Account? Registrieren</p>
         </div>
     </div>
 
     <div id="dashboardSection">
         <h1>Meine Zentrale</h1>
 
-        <div class="main-grid">
-            <a href="https://youtube.com" target="_blank" class="card yt-card" style="border-bottom: 4px solid red;">
-                <img src="https://www.google.com/s2/favicons?sz=64&domain=youtube.com" class="favicon">
-                YouTube
+        <div class="grid">
+            <a href="https://youtube.com" class="card yt">
+                <img src="https://www.google.com/s2/favicons?sz=64&domain=youtube.com" class="icon">
+                <span>YouTube</span>
             </a>
-            <a href="https://google.com" target="_blank" class="card" style="border-bottom: 4px solid #00ff88;">
-                <img src="https://www.google.com/s2/favicons?sz=64&domain=google.com" class="favicon">
-                Suche
+            <a href="https://ublockorigin.com" class="card tool">
+                <img src="https://www.google.com/s2/favicons?sz=64&domain=ublockorigin.com" class="icon">
+                <span>uBlock installieren</span>
+            </a>
+            <a href="#" class="card tool" onclick="alert('Link hinzufügen-Funktion ist unten!')">
+                <span style="font-size: 2rem;">+</span>
+                <span>Link hinzufügen</span>
+            </a>
+            <a href="https://google.com" class="card search">
+                <img src="https://www.google.com/s2/favicons?sz=64&domain=google.com" class="icon">
+                <span>Suche</span>
             </a>
         </div>
 
-        <div id="favGrid" class="fav-grid"></div>
+        <div id="dynamicGrid" class="grid"></div>
 
-        <div style="margin-top: 40px; width: 100%; max-width: 600px; background: rgba(255,255,255,0.03); padding: 25px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.05);">
-            <h3 style="margin-top:0;">Neuer Schnell-Link 📥</h3>
+        <div class="add-section">
+            <h3>Schnell-Links speichern</h3>
             <input type="text" id="favName" placeholder="Name">
-            <input type="text" id="favUrl" placeholder="URL">
-            <button class="btn-action" onclick="addFav()">Hinzufügen ✨</button>
+            <input type="text" id="favUrl" placeholder="URL (z.B. github.com)">
+            <button class="btn-main" onclick="addFav()">Speichern ✨</button>
         </div>
 
-        <button onclick="logout()" style="margin-top:40px; background:none; border:none; color:rgba(255,255,255,0.2); cursor:pointer;">Abmelden</button>
+        <button onclick="logout()" style="margin: 40px 0; background: none; border: none; color: gray; cursor: pointer;">Abmelden</button>
     </div>
 
     <script>
         function toggleMode() {
-            const m = document.getElementById('mainBtn');
-            const mode = m.dataset.mode;
-            if(mode === 'login') {
-                m.dataset.mode = 'register'; m.innerText = 'Account erstellen ✨';
-                document.getElementById('confirmPassGroup').style.display = 'block';
-                document.getElementById('switchBtn').innerText = 'Bereits dabei? Login';
-            } else {
-                m.dataset.mode = 'login'; m.innerText = 'Anmelden ✨';
-                document.getElementById('confirmPassGroup').style.display = 'none';
-                document.getElementById('switchBtn').innerText = 'Noch kein Account? Registrieren';
-            }
+            const btn = document.getElementById('mainBtn');
+            btn.dataset.mode = btn.dataset.mode === 'login' ? 'register' : 'login';
+            btn.innerText = btn.dataset.mode === 'login' ? 'Anmelden' : 'Registrieren';
         }
     </script>
 </body>
