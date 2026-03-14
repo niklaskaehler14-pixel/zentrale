@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Zentrale</title>
+    <style>
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --bg: #0b0e14;
+        }
+
+        body {
+            margin: 0; padding: 20px; min-height: 100vh;
+            background-color: var(--bg);
+            background: radial-gradient(circle at top right, #1a1a2e, #0b0e14);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex; flex-direction: column; align-items: center; color: white;
+        }
+
+        /* Sprach-Umschalter oben rechts */
+        .lang-switch {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px; border-radius: 12px;
+            cursor: pointer; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: 0.3s; z-index: 100;
+        }
+        .lang-switch:hover { background: rgba(255, 255, 255, 0.2); }
+
+        .main-grid, .fav-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 20px; width: 100%; max-width: 600px;
+            margin-bottom: 20px; margin-top: 20px;
+        }
+
+        .fav-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            margin-bottom: 40px;
+        }
+
+        .card, .fav-card-item {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px; padding: 20px;
+            text-align: center; text-decoration: none; color: white;
+            font-weight: bold; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            position: relative; overflow: hidden; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+
+        .card:hover, .fav-card-item:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: var(--primary);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.3);
+        }
+
+        .favicon { width: 32px; height: 32px; border-radius: 6px; }
+
+        .yt-card { border-bottom: 4px solid #ff0000; }
+        .ublock-card { border-bottom: 4px solid #800000; }
+        .tool-card { border-bottom: 4px solid var(--primary); }
+        .search-card { border-bottom: 4px solid #00ff88; }
+
+        .manager-section {
+            width: 90%; max-width: 600px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 25px; padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        input { 
+            padding: 12px; border-radius: 12px; border: none; 
+            background: rgba(255,255,255,0.1); color: white;
+        }
+
+        .btn-add {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border: none; padding: 12px; border-radius: 12px; color: white;
+            font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+
+        .btn-del {
+            position: absolute; top: 5px; right: 5px;
+            background: rgba(233, 69, 96, 0.8); border: none; 
+            border-radius: 50%; color: white; width: 22px; height: 22px;
+            font-size: 12px; cursor: pointer; display: none;
+        }
+        .fav-card-item:hover .btn-del { display: block; }
+
+    </style>
+</head>
+<body>
+
+    <div class="lang-switch" onclick="toggleLang()" id="langBtn">🇩🇪 DE</div>
+
+    <h1 id="title" style="text-shadow: 0 0 20px var(--primary);">Meine Zentrale</h1>
+
+    <div class="main-grid">
+        <a href="https://www.youtube.com" target="_blank" class="card yt-card">
+            <img src="https://www.google.com/s2/favicons?sz=64&domain=youtube.com" class="favicon">
+            YouTube
+        </a>
+        <a href="https://ublockorigin.com/" target="_blank" class="card ublock-card">
+            <img src="https://www.google.com/s2/favicons?sz=64&domain=ublockorigin.com" class="favicon">
+            <span id="btnUblock">uBlock installieren</span>
+        </a>
+        <div onclick="document.getElementById('favName').focus();" class="card tool-card">
+            <span>➕</span>
+            <span id="btnAddLink">Link hinzufügen</span>
+        </div>
+        <a href="https://google.com" target="_blank" class="card search-card">
+            <img src="https://www.google.com/s2/favicons?sz=64&domain=google.com" class="favicon">
+            <span id="btnSearch">Suche</span>
+        </a>
+    </div>
+
+    <div id="favGrid" class="fav-grid"></div>
+
+    <div class="manager-section">
+        <h3 id="managerTitle">Schnell-Links speichern</h3>
+        <div class="input-group">
+            <input type="text" id="favName" placeholder="Name">
+            <input type="text" id="favUrl" placeholder="URL (z.B. github.com)">
+            <button class="btn-add" id="btnAddSubmit" onclick="addFav()">Hinzufügen</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'de';
+
+        const texts = {
+            de: {
+                title: "Meine Zentrale",
+                ublock: "uBlock installieren",
+                addLink: "Link hinzufügen",
+                search: "Suche",
+                manager: "Schnell-Links speichern",
+                submit: "Hinzufügen",
+                btn: "🇩🇪 DE"
+            },
+            en: {
+                title: "My Central",
+                ublock: "Install uBlock",
+                addLink: "Add Link",
+                search: "Search",
+                manager: "Save Quick-Links",
+                submit: "Add now",
+                btn: "🇺🇸 EN"
+            }
+        };
+
+        function toggleLang() {
+            currentLang = currentLang === 'de' ? 'en' : 'de';
+            const t = texts[currentLang];
+            
+            document.getElementById('title').innerText = t.title;
+            document.getElementById('btnUblock').innerText = t.ublock;
+            document.getElementById('btnAddLink').innerText = t.addLink;
+            document.getElementById('btnSearch').innerText = t.search;
+            document.getElementById('managerTitle').innerText = t.manager;
+            document.getElementById('btnAddSubmit').innerText = t.submit;
+            document.getElementById('langBtn').innerText = t.btn;
+        }
+
+        document.addEventListener('DOMContentLoaded', displayFavs);
+
+        function addFav() {
+            let name = document.getElementById('favName').value;
+            let url = document.getElementById('favUrl').value;
+            if (name && url) {
+                if (!url.startsWith('http')) url = 'https://' + url;
+                const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
+                favorites.push({ name, url });
+                localStorage.setItem('myCentralFavs', JSON.stringify(favorites));
+                document.getElementById('favName').value = '';
+                document.getElementById('favUrl').value = '';
+                displayFavs();
+            }
+        }
+
+        function displayFavs() {
+            const grid = document.getElementById('favGrid');
+            const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
+            grid.innerHTML = favorites.map((fav, index) => {
+                const domain = new URL(fav.url).hostname;
+                return `
+                    <div class="fav-card-item">
+                        <button class="btn-del" onclick="deleteFav(${index})">×</button>
+                        <a href="${fav.url}" target="_blank" style="text-decoration:none; color:white; display:flex; flex-direction:column; align-items:center; gap:8px;">
+                            <img src="https://www.google.com/s2/favicons?sz=64&domain=${domain}" class="favicon" onerror="this.src='https://www.google.com/s2/favicons?sz=64&domain=google.com'">
+                            <span style="font-size: 0.9rem;">${fav.name}</span>
+                        </a>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function deleteFav(index) {
+            const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
+            favorites.splice(index, 1);
+            localStorage.setItem('myCentralFavs', JSON.stringify(favorites));
+            displayFavs();
+        }
+    </script>
+</body>
+</html>
