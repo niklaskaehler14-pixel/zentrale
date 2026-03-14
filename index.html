@@ -10,19 +10,26 @@
             --bg-dark: #05070a;
             --bg-medium: #0f172a;
             --bg-light: #1e293b;
-            --garden: #2ecc71;
         }
 
         body {
             margin: 0; padding: 20px; min-height: 100vh;
-            /* Der edle, entspannte Verlauf */
             background: radial-gradient(circle at top right, var(--bg-light), var(--bg-medium), var(--bg-dark));
             background-attachment: fixed;
             font-family: 'Segoe UI', Roboto, sans-serif;
             display: flex; flex-direction: column; align-items: center; color: white;
+            position: relative;
         }
 
-        /* Sprach-Umschalter oben rechts */
+        /* Der unscheinbare Prank-Button unten links */
+        .settings-prank {
+            position: fixed; bottom: 15px; left: 15px;
+            font-size: 18px; color: rgba(255, 255, 255, 0.15);
+            text-decoration: none; cursor: pointer; transition: 0.3s;
+            z-index: 1000;
+        }
+        .settings-prank:hover { color: rgba(255, 255, 255, 0.5); }
+
         .lang-switch {
             position: absolute; top: 20px; right: 20px;
             background: rgba(255, 255, 255, 0.05);
@@ -31,9 +38,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: 0.3s; z-index: 100;
         }
-        .lang-switch:hover { background: rgba(255, 255, 255, 0.15); }
 
-        /* Das Grid für die Hauptbuttons */
         .main-grid {
             display: grid; grid-template-columns: repeat(2, 1fr);
             gap: 20px; width: 100%; max-width: 600px;
@@ -67,48 +72,45 @@
 
         .favicon { width: 32px; height: 32px; border-radius: 8px; }
 
-        /* Individuelle Boden-Leiste für die Buttons */
         .yt-card { border-bottom: 4px solid #ff0000; }
         .ublock-card { border-bottom: 4px solid #800000; }
-        .garden-card { border-bottom: 4px solid var(--garden); } /* Der neue Garten-Button */
-        .search-card { border-bottom: 4px solid var(--primary); }
+        .tool-card { border-bottom: 4px solid var(--primary); }
+        .search-card { border-bottom: 4px solid #00ff88; }
 
         .manager-section {
             width: 90%; max-width: 600px;
             background: rgba(255, 255, 255, 0.02);
             border-radius: 25px; padding: 30px;
             border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: inset 0 0 20px rgba(255,255,255,0.02);
         }
 
-        .input-group { display: flex; flex-direction: column; gap: 10px; }
         input { 
             padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
-            background: rgba(0,0,0,0.2); color: white; outline: none;
+            background: rgba(0,0,0,0.2); color: white; margin-bottom: 10px; width: 100%; box-sizing: border-box;
         }
 
         .btn-add {
             background: linear-gradient(to right, var(--primary), var(--secondary));
             border: none; padding: 14px; border-radius: 12px; color: #0b0e14;
-            font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s;
+            font-weight: bold; cursor: pointer; width: 100%;
         }
-        .btn-add:hover { opacity: 0.9; transform: scale(0.98); }
 
         .btn-del {
             position: absolute; top: 8px; right: 8px;
             background: rgba(233, 69, 96, 0.9); border: none; 
             border-radius: 50%; color: white; width: 24px; height: 24px;
-            font-size: 14px; cursor: pointer; display: none;
+            display: none; cursor: pointer;
         }
         .fav-card-item:hover .btn-del { display: block; }
-
     </style>
 </head>
 <body>
 
+    <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="settings-prank">⚙️</a>
+
     <div class="lang-switch" onclick="toggleLang()" id="langBtn">🇩🇪 DE</div>
 
-    <h1 id="title" style="margin-top: 40px; font-weight: 300; letter-spacing: 2px; text-shadow: 0 0 15px rgba(0,242,254,0.3);">Meine Zentrale</h1>
+    <h1 id="title" style="margin-top: 40px; font-weight: 300; letter-spacing: 2px;">Meine Zentrale</h1>
 
     <div class="main-grid">
         <a href="https://www.youtube.com" target="_blank" class="card yt-card">
@@ -117,43 +119,40 @@
         </a>
         <a href="https://ublockorigin.com/" target="_blank" class="card ublock-card">
             <img src="https://www.google.com/s2/favicons?sz=64&domain=ublockorigin.com" class="favicon">
-            <span id="btnUblock">uBlock</span>
+            uBlock
         </a>
-        <a href="https://www.google.com/search?q=garten+ideen" target="_blank" class="card garden-card">
-            <span>🌿</span>
-            <span id="btnGarden">Garten</span>
-        </a>
-        <div onclick="document.getElementById('favName').focus();" class="card search-card">
+        <div onclick="document.getElementById('favName').focus();" class="card tool-card">
             <span>➕</span>
             <span id="btnAddLink">Link dazu</span>
         </div>
+        <a href="https://google.com" target="_blank" class="card search-card">
+            <img src="https://www.google.com/s2/favicons?sz=64&domain=google.com" class="favicon">
+            <span id="btnSearch">Suche</span>
+        </a>
     </div>
 
     <div id="favGrid" class="fav-grid"></div>
 
     <div class="manager-section">
-        <h3 id="managerTitle" style="margin-top:0; font-weight: 400;">Schnell-Links speichern</h3>
-        <div class="input-group">
-            <input type="text" id="favName" placeholder="Name">
-            <input type="text" id="favUrl" placeholder="URL (z.B. github.com)">
-            <button class="btn-add" id="btnAddSubmit" onclick="addFav()">Hinzufügen</button>
-        </div>
+        <h3 id="managerTitle">Schnell-Links speichern</h3>
+        <input type="text" id="favName" placeholder="Name">
+        <input type="text" id="favUrl" placeholder="URL (z.B. github.com)">
+        <button class="btn-add" id="btnAddSubmit" onclick="addFav()">Hinzufügen</button>
     </div>
 
     <script>
         let currentLang = 'de';
         const texts = {
-            de: { title: "Meine Zentrale", ublock: "uBlock", garden: "Garten", addLink: "Link dazu", manager: "Schnell-Links speichern", submit: "Hinzufügen", btn: "🇩🇪 DE" },
-            en: { title: "My Central", ublock: "uBlock", garden: "Garden", addLink: "Add Link", manager: "Save Quick-Links", submit: "Add now", btn: "🇺🇸 EN" }
+            de: { title: "Meine Zentrale", addLink: "Link dazu", search: "Suche", manager: "Schnell-Links speichern", submit: "Hinzufügen", btn: "🇩🇪 DE" },
+            en: { title: "My Central", addLink: "Add Link", search: "Search", manager: "Save Quick-Links", submit: "Add now", btn: "🇺🇸 EN" }
         };
 
         function toggleLang() {
             currentLang = currentLang === 'de' ? 'en' : 'de';
             const t = texts[currentLang];
             document.getElementById('title').innerText = t.title;
-            document.getElementById('btnUblock').innerText = t.ublock;
-            document.getElementById('btnGarden').innerText = t.garden;
             document.getElementById('btnAddLink').innerText = t.addLink;
+            document.getElementById('btnSearch').innerText = t.search;
             document.getElementById('managerTitle').innerText = t.manager;
             document.getElementById('btnAddSubmit').innerText = t.submit;
             document.getElementById('langBtn').innerText = t.btn;
