@@ -18,17 +18,24 @@
             background-attachment: fixed;
             font-family: 'Segoe UI', Roboto, sans-serif;
             display: flex; flex-direction: column; align-items: center; color: white;
-            position: relative;
+            position: relative; overflow-x: hidden;
         }
 
-        /* Der unscheinbare Prank-Button unten links */
+        /* Das versteckte Prank-Video-Fenster */
+        #prankOverlay {
+            display: none;
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: black; z-index: 9999;
+        }
+
         .settings-prank {
             position: fixed; bottom: 15px; left: 15px;
-            font-size: 18px; color: rgba(255, 255, 255, 0.15);
-            text-decoration: none; cursor: pointer; transition: 0.3s;
-            z-index: 1000;
+            font-size: 18px; color: rgba(255, 255, 255, 0.1);
+            cursor: pointer; transition: 0.3s; z-index: 1000;
+            user-select: none;
         }
-        .settings-prank:hover { color: rgba(255, 255, 255, 0.5); }
+        .settings-prank:hover { color: rgba(255, 255, 255, 0.3); }
 
         .lang-switch {
             position: absolute; top: 20px; right: 20px;
@@ -36,13 +43,13 @@
             padding: 10px; border-radius: 12px;
             cursor: pointer; backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: 0.3s; z-index: 100;
+            z-index: 100;
         }
 
         .main-grid {
             display: grid; grid-template-columns: repeat(2, 1fr);
             gap: 20px; width: 100%; max-width: 600px;
-            margin-bottom: 20px; margin-top: 20px;
+            margin-bottom: 20px; margin-top: 40px;
         }
 
         .fav-grid {
@@ -56,22 +63,20 @@
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 20px; padding: 20px;
-            text-align: center; text-decoration: none; color: white;
+            text-align: center; color: white;
             font-weight: bold; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            position: relative; overflow: hidden; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;
+            text-decoration: none;
         }
 
         .card:hover, .fav-card-item:hover {
             transform: translateY(-8px);
-            background: rgba(255, 255, 255, 0.08);
             border-color: var(--primary);
-            box-shadow: 0 15px 35px rgba(0, 242, 254, 0.2);
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .favicon { width: 32px; height: 32px; border-radius: 8px; }
-
         .yt-card { border-bottom: 4px solid #ff0000; }
         .ublock-card { border-bottom: 4px solid #800000; }
         .tool-card { border-bottom: 4px solid var(--primary); }
@@ -99,14 +104,19 @@
             position: absolute; top: 8px; right: 8px;
             background: rgba(233, 69, 96, 0.9); border: none; 
             border-radius: 50%; color: white; width: 24px; height: 24px;
-            display: none; cursor: pointer;
+            display: none;
         }
         .fav-card-item:hover .btn-del { display: block; }
     </style>
 </head>
 <body>
 
-    <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="settings-prank">⚙️</a>
+    <div class="settings-prank" onclick="startPrank()">⚙️</div>
+
+    <div id="prankOverlay">
+        <iframe id="prankVideo" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        <button onclick="stopPrank()" style="position:absolute; top:20px; right:20px; background:white; border:none; padding:10px; border-radius:5px; cursor:pointer; opacity:0.3;">Schließen</button>
+    </div>
 
     <div class="lang-switch" onclick="toggleLang()" id="langBtn">🇩🇪 DE</div>
 
@@ -136,11 +146,28 @@
     <div class="manager-section">
         <h3 id="managerTitle">Schnell-Links speichern</h3>
         <input type="text" id="favName" placeholder="Name">
-        <input type="text" id="favUrl" placeholder="URL (z.B. github.com)">
+        <input type="text" id="favUrl" placeholder="URL">
         <button class="btn-add" id="btnAddSubmit" onclick="addFav()">Hinzufügen</button>
     </div>
 
     <script>
+        // Prank Logik
+        function startPrank() {
+            const overlay = document.getElementById('prankOverlay');
+            const video = document.getElementById('prankVideo');
+            // Autoplay URL für Rick Roll
+            video.src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
+            overlay.style.display = 'block';
+        }
+
+        function stopPrank() {
+            const overlay = document.getElementById('prankOverlay');
+            const video = document.getElementById('prankVideo');
+            video.src = "";
+            overlay.style.display = 'none';
+        }
+
+        // Sprach- und Favoriten-Logik
         let currentLang = 'de';
         const texts = {
             de: { title: "Meine Zentrale", addLink: "Link dazu", search: "Suche", manager: "Schnell-Links speichern", submit: "Hinzufügen", btn: "🇩🇪 DE" },
