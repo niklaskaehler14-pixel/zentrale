@@ -22,12 +22,32 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
+
+        // --- NEU: PASSWORT RESET FUNKTIONEN ---
+        window.openResetModal = () => {
+            document.getElementById('resetModal').style.display = 'flex';
+        };
+
+        window.closeResetModal = () => {
+            document.getElementById('resetModal').style.display = 'none';
+        };
+
+        window.sendResetEmail = async () => {
+            const email = document.getElementById('resetEmailInput').value;
+            if (!email) return alert("Bitte E-Mail eingeben!");
+            try {
+                const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+                await sendPasswordResetEmail(auth, email, actionCodeSettings);
+                alert("E-Mail gesendet! Check dein Postfach.");
+                closeResetModal();
+            } catch (e) { alert(e.message); }
+        };
+        // --------------------------------------
 
         let currentLang = 'de';
         const translations = {
-            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", google: "Google Login", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche", forgot: "Passwort vergessen?" },
-            en: { title: "My Central", login: "Login", reg: "Register", google: "Google Login", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search", forgot: "Forgot password?" }
+            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche", forgot: "Passwort vergessen?" },
+            en: { title: "My Central", login: "Login", reg: "Register", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search", forgot: "Forgot password?" }
         };
 
         window.toggleLang = () => {
@@ -45,23 +65,6 @@
             });
         }
 
-        window.scrollToAdd = (e) => {
-            e.preventDefault();
-            document.getElementById('addSection').scrollIntoView({ behavior: 'smooth' });
-            document.getElementById('favName').focus();
-        };
-
-        window.resetPassword = async () => {
-            const email = document.getElementById('email').value;
-            if (!email) return alert("Bitte E-Mail eingeben!");
-            try {
-                // Die URL leitet dich nach dem Reset zurück zur Seite
-                const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
-                await sendPasswordResetEmail(auth, email, actionCodeSettings);
-                alert("E-Mail gesendet! Check dein Postfach.");
-            } catch (e) { alert(e.message); }
-        };
-
         window.handleSubmit = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
@@ -78,10 +81,7 @@
             document.getElementById('authSection').style.display = user ? 'none' : 'flex';
             document.getElementById('dashboardSection').style.display = user ? 'block' : 'none';
             document.getElementById('topNav').style.display = user ? 'flex' : 'none';
-            if (user) {
-                document.getElementById('userEmail').innerText = user.email;
-                loadLinks(user.uid);
-            }
+            if (user) { loadLinks(user.uid); }
         });
 
         window.addFav = async () => {
@@ -126,89 +126,75 @@
 
         window.toggleSettings = () => {
             const modal = document.getElementById('settingsModal');
-            if (modal.style.display === 'flex') {
-                modal.classList.remove('active');
-                setTimeout(() => modal.style.display = 'none', 300);
-            } else {
-                modal.style.display = 'flex';
-                setTimeout(() => modal.classList.add('active'), 10);
-            }
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
         };
     </script>
 
     <style>
-        :root { --glow-cyan: rgba(0, 242, 254, 0.5); --glow-red: rgba(255, 60, 60, 0.5); --glow-green: rgba(60, 255, 60, 0.4); }
-        html { scroll-behavior: smooth; }
-        body { margin: 0; background: #0f172a; color: white; font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; }
-        .top-nav { width: 100%; display: none; justify-content: flex-end; padding: 15px; gap: 15px; box-sizing: border-box; position: fixed; top: 0; z-index: 100; }
-        .nav-icon { font-size: 1.5rem; cursor: pointer; opacity: 0.7; transition: 0.3s; }
+        :root { --glow-cyan: rgba(0, 242, 254, 0.5); }
+        body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        .top-nav { width: 100%; display: none; justify-content: flex-end; padding: 15px; gap: 15px; position: fixed; top: 0; }
         #dashboardSection { display: none; width: 90%; max-width: 600px; text-align: center; padding-top: 60px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        
-        .card {
-            background: rgba(255,255,255,0.07); border-radius: 18px; padding: 25px;
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-            text-decoration: none !important; color: white; position: relative; border-bottom: 3px solid transparent;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; height: 110px; justify-content: center;
-        }
-        .card:hover { transform: translateY(-8px) scale(1.02); background: rgba(255,255,255,0.12); }
-        .fav-link-area { text-decoration: none !important; color: inherit; display: flex; flex-direction: column; align-items: center; width: 100%; }
-        .fav-label { margin-top: 10px; font-weight: bold; font-size: 0.95rem; text-decoration: none !important; display: block; }
-        .yt { border-color: #ff4444; } .yt:hover { box-shadow: 0 10px 25px var(--glow-red); }
-        .tool { border-color: #4facfe; } .tool:hover { box-shadow: 0 10px 25px var(--glow-cyan); }
-        .search { border-color: #00ff88; } .search:hover { box-shadow: 0 10px 25px var(--glow-green); }
-        .custom-fav-card { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); }
-        .icon { width: 45px; height: 45px; object-fit: contain; }
-        .btn-del { position: absolute; top: 5px; right: 8px; background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 1.2rem; z-index: 10; }
-        #settingsModal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: 0.3s ease; }
-        #settingsModal.active { opacity: 1; }
-        .modal-content { background: #1e293b; padding: 30px; border-radius: 25px; width: 280px; text-align: center; transform: scale(0.8); transition: 0.3s; }
-        #settingsModal.active .modal-content { transform: scale(1); }
-        .add-section { background: rgba(255,255,255,0.03); padding: 25px; border-radius: 25px; margin: 40px 0; border: 1px solid rgba(255,255,255,0.05); }
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; background: #1e293b; color: white; box-sizing: border-box; outline: none; }
-        .btn-main { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #4facfe; color: white; font-weight: bold; cursor: pointer; }
-        #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; }
-        .login-card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 25px; width: 320px; text-align: center; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .card { background: rgba(255,255,255,0.07); border-radius: 18px; padding: 20px; text-decoration: none !important; color: white; position: relative; display: flex; flex-direction: column; align-items: center; }
+        .fav-link-area { text-decoration: none !important; color: inherit; display: flex; flex-direction: column; align-items: center; }
+        .fav-label { margin-top: 10px; font-weight: bold; text-decoration: none !important; }
+        .icon { width: 40px; height: 40px; }
+        .btn-del { position: absolute; top: 5px; right: 5px; background: none; border: none; color: white; opacity: 0.3; cursor: pointer; }
+        .add-section { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; margin-top: 30px; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border-radius: 8px; border: none; background: #1e293b; color: white; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 10px; border-radius: 8px; border: none; background: #4facfe; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px; width: 300px; text-align: center; }
         .forgot-link { font-size: 0.8rem; color: #4facfe; cursor: pointer; display: block; margin: 10px 0; }
     </style>
 </head>
 <body>
-    <div class="top-nav" id="topNav"><span class="nav-icon" id="langBtn" onclick="toggleLang()">🇩🇪</span><span class="nav-icon" onclick="toggleSettings()">⚙️</span></div>
+
+    <div class="top-nav" id="topNav">
+        <span onclick="toggleLang()" style="cursor:pointer" id="langBtn">🇩🇪</span>
+        <span onclick="toggleSettings()" style="cursor:pointer">⚙️</span>
+    </div>
+
     <div id="authSection">
         <div class="login-card">
             <h2 data-t="login">Anmelden</h2>
             <input type="email" id="email" placeholder="E-Mail">
             <input type="password" id="password" placeholder="Passwort">
-            <span class="forgot-link" onclick="resetPassword()" data-t="forgot">Passwort vergessen?</span>
+            
+            <span class="forgot-link" onclick="openResetModal()" data-t="forgot">Passwort vergessen?</span>
+            
             <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()" data-t="login">Anmelden</button>
-            <button class="btn-main" style="background:white; color:#333; margin-top:10px;" onclick="loginWithGoogle()">Google Login</button>
-            <p onclick="toggleMode()" id="switchBtn" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.6;" data-t="switch">Noch kein Account? Registrieren</p>
+            <p onclick="toggleMode()" style="cursor:pointer; font-size: 0.8rem; opacity: 0.6;" data-t="switch">Registrieren</p>
         </div>
     </div>
+
     <div id="dashboardSection">
         <h1 data-t="title">Meine Zentrale</h1>
-        <div class="grid">
-            <a href="https://youtube.com" target="_blank" class="card yt"><img src="https://www.google.com/s2/favicons?sz=64&domain=youtube.com" class="icon"><span>YouTube</span></a>
-            <a href="https://ublockorigin.com" target="_blank" class="card tool"><img src="https://www.google.com/s2/favicons?sz=64&domain=ublockorigin.com" class="icon"><span>uBlock</span></a>
-            <a href="#addSection" class="card tool" onclick="scrollToAdd(event)"><span style="font-size: 1.5rem;">+</span><span data-t="add">Link hinzufügen</span></a>
-            <a href="https://google.com" target="_blank" class="card search"><img src="https://www.google.com/s2/favicons?sz=64&domain=google.com" class="icon"><span data-t="search">Suche</span></a>
-        </div>
         <div id="dynamicGrid" class="grid"></div>
         <div class="add-section" id="addSection">
-            <h3 data-t="add">Schnell-Links speichern</h3>
+            <h3 data-t="add">Link hinzufügen</h3>
             <input type="text" id="favName" data-t="name" placeholder="Name">
             <input type="text" id="favUrl" data-t="url" placeholder="URL">
             <button class="btn-main" onclick="addFav()" data-t="save">Speichern ✨</button>
         </div>
     </div>
-    <div id="settingsModal" onclick="if(event.target == this) toggleSettings()">
-        <div class="modal-content"><h3 data-t="settings">Einstellungen</h3><p id="userEmail" style="opacity: 0.6; margin-bottom: 25px;"></p><button class="btn-main" style="background: #ef4444;" onclick="logout()" data-t="logout">Abmelden</button></div>
+
+    <div id="resetModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000;">
+        <div style="background: #1e293b; padding: 30px; border-radius: 20px; width: 280px; text-align: center; border: 1px solid #4facfe;">
+            <h3 style="margin-top: 0;">Passwort zurück</h3>
+            <p style="font-size: 0.75rem; opacity: 0.7;">Gib deine E-Mail ein:</p>
+            <input type="email" id="resetEmailInput" placeholder="E-Mail">
+            <button class="btn-main" onclick="sendResetEmail()">Link senden</button>
+            <p onclick="closeResetModal()" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.5;">Abbrechen</p>
+        </div>
     </div>
+
     <script>
         function toggleMode() {
             const btn = document.getElementById('mainBtn');
             btn.dataset.mode = btn.dataset.mode === 'login' ? 'register' : 'login';
-            btn.innerText = btn.dataset.mode === 'login' ? translations[currentLang].login : translations[currentLang].reg;
+            btn.innerText = btn.dataset.mode === 'login' ? 'Anmelden' : 'Registrieren';
         }
     </script>
 </body>
