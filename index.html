@@ -2,7 +2,8 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Meine Zentrale</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Meine Zentrale</title>
     <style>
         :root {
             --primary: #00f2fe;
@@ -12,10 +13,17 @@
             --bg-light: #1e293b;
         }
 
+        /* FIX: Hintergrund deckt alles ab und bewegt sich nicht mit */
+        html, body {
+            margin: 0; padding: 0;
+            width: 100%; min-height: 100%;
+            background-color: var(--bg-dark);
+        }
+
         body {
-            margin: 0; padding: 15px; min-height: 100vh;
-            background: radial-gradient(circle at top right, var(--bg-light), var(--bg-medium), var(--bg-dark));
-            background-attachment: fixed;
+            padding: 15px; box-sizing: border-box;
+            background: radial-gradient(circle at top right, var(--bg-light), var(--bg-medium), var(--bg-dark)) no-repeat center center fixed;
+            background-size: cover;
             font-family: 'Segoe UI', Roboto, sans-serif;
             display: flex; flex-direction: column; align-items: center; color: white;
             position: relative; overflow-x: hidden;
@@ -27,10 +35,11 @@
             width: 100%; height: 100%; background: black; z-index: 9999;
         }
 
+        /* Prank-Button jetzt oben rechts, sehr dezent */
         .settings-prank {
-            position: fixed; bottom: 10px; left: 10px;
-            font-size: 16px; color: rgba(255, 255, 255, 0.08);
-            cursor: pointer; z-index: 1000;
+            position: absolute; top: 22px; right: 85px; /* Neben dem DE/EN Button */
+            font-size: 16px; color: rgba(255, 255, 255, 0.1);
+            cursor: pointer; z-index: 1000; text-decoration: none;
         }
 
         .lang-switch {
@@ -39,39 +48,27 @@
             padding: 8px 12px; border-radius: 10px;
             cursor: pointer; backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 14px;
+            font-size: 14px; z-index: 100;
         }
 
         h1 { 
-            margin-top: 50px; font-weight: 300; letter-spacing: 2px; text-align: center;
-            font-size: 1.8rem;
+            margin-top: 60px; font-weight: 300; letter-spacing: 2px; text-align: center;
+            font-size: 1.8rem; text-shadow: 0 0 15px rgba(0,242,254,0.2);
         }
 
-        /* GRID LOGIK FÜR PC & HANDY */
         .main-grid {
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); /* 2 Spalten Standard */
-            gap: 15px; width: 100%; max-width: 600px;
-            margin: 20px 0;
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 15px; width: 100%; max-width: 600px; margin: 20px 0;
         }
 
         .fav-grid {
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px; width: 100%; max-width: 600px;
-            margin-bottom: 30px;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px; width: 100%; max-width: 600px; margin-bottom: 30px;
         }
 
-        /* MOBILE ANPASSUNG (Media Query) */
         @media (max-width: 480px) {
-            .main-grid {
-                grid-template-columns: 1fr; /* Nur 1 Spalte auf dem Handy */
-            }
-            .fav-grid {
-                grid-template-columns: repeat(2, 1fr); /* 2 kleine Kacheln nebeneinander auf Handy */
-            }
-            h1 { font-size: 1.5rem; }
-            .manager-section { padding: 20px; }
+            .main-grid { grid-template-columns: 1fr; }
+            .fav-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
         .card, .fav-card-item {
@@ -82,10 +79,10 @@
             text-align: center; color: white; font-weight: bold;
             transition: 0.3s; box-shadow: 0 8px 25px rgba(0,0,0,0.4);
             cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;
-            text-decoration: none;
+            text-decoration: none; position: relative;
         }
 
-        .card:active { transform: scale(0.95); } /* Klick-Effekt für Touchscreens */
+        .card:active { transform: scale(0.96); }
 
         .favicon { width: 30px; height: 30px; border-radius: 6px; }
         .yt-card { border-bottom: 3px solid #ff0000; }
@@ -98,12 +95,13 @@
             background: rgba(255, 255, 255, 0.02);
             border-radius: 20px; padding: 25px;
             border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 50px; /* Platz unten */
         }
 
         input { 
             padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); 
-            background: rgba(0,0,0,0.2); color: white; margin-bottom: 10px; width: 100%; box-sizing: border-box;
-            font-size: 16px; /* Verhindert automatisches Zoomen bei iOS */
+            background: rgba(0,0,0,0.3); color: white; margin-bottom: 10px; width: 100%; box-sizing: border-box;
+            font-size: 16px; outline: none;
         }
 
         .btn-add {
@@ -116,7 +114,7 @@
             position: absolute; top: 5px; right: 5px;
             background: rgba(233, 69, 96, 0.9); border: none; 
             border-radius: 50%; color: white; width: 22px; height: 22px;
-            display: none;
+            font-size: 12px; cursor: pointer; display: none;
         }
         .fav-card-item:hover .btn-del { display: block; }
     </style>
@@ -127,7 +125,7 @@
 
     <div id="prankOverlay">
         <iframe id="prankVideo" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        <button onclick="stopPrank()" style="position:absolute; top:20px; right:20px; background:white; border:none; padding:10px; border-radius:5px;">X</button>
+        <button onclick="stopPrank()" style="position:absolute; top:20px; right:20px; background:white; border:none; padding:10px; border-radius:10px; font-weight:bold;">X</button>
     </div>
 
     <div class="lang-switch" onclick="toggleLang()" id="langBtn">🇩🇪 DE</div>
@@ -220,7 +218,7 @@
                         <button class="btn-del" onclick="deleteFav(${index})">×</button>
                         <a href="${fav.url}" target="_blank" style="text-decoration:none; color:white; display:flex; flex-direction:column; align-items:center; gap:8px;">
                             <img src="https://www.google.com/s2/favicons?sz=64&domain=${domain}" class="favicon" onerror="this.src='https://www.google.com/s2/favicons?sz=64&domain=google.com'">
-                            <span style="font-size: 0.85rem; opacity: 0.9; text-align:center;">${fav.name}</span>
+                            <span style="font-size: 0.85rem; opacity: 0.9;">${fav.name}</span>
                         </a>
                     </div>
                 `;
