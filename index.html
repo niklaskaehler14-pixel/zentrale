@@ -22,6 +22,25 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        window.openResetModal = () => {
+    document.getElementById('resetModal').style.display = 'flex';
+};
+
+window.closeResetModal = () => {
+    document.getElementById('resetModal').style.display = 'none';
+};
+
+window.sendResetEmail = async () => {
+    const email = document.getElementById('resetEmailInput').value;
+    if (!email) return alert("Bitte E-Mail eingeben!");
+    try {
+        const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+        await sendPasswordResetEmail(auth, email, actionCodeSettings);
+        alert("E-Mail gesendet! Schau in dein Postfach.");
+        closeResetModal();
+    } catch (e) { alert(e.message); }
+};
+
 
         // --- NUR DIESE DREI FUNKTIONEN SIND NEU FÜR DAS FENSTER ---
         window.openResetModal = () => {
@@ -160,9 +179,11 @@
         <div class="login-card">
             <h2 data-t="login">Anmelden</h2>
             <input type="email" id="email" placeholder="E-Mail">
-            <input type="password" id="password" placeholder="Passwort">
+            <span class="forgot-link" onclick="openResetModal()" data-t="forgot" style="cursor:pointer; color:#4facfe;">Passwort vergessen?</span>
+
             
-            <span class="forgot-link" onclick="openResetModal()" data-t="forgot">Passwort vergessen?</span>
+            <<span class="forgot-link" onclick="openResetModal()" data-t="forgot" style="cursor:pointer; color:#4facfe;">Passwort vergessen?</span>
+
             
             <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()" data-t="login">Anmelden</button>
             <p onclick="toggleMode()" style="cursor:pointer; font-size: 0.8rem; opacity: 0.6;" data-t="switch">Registrieren</p>
