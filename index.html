@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -41,12 +40,14 @@
             const t = translations[currentLang];
             document.querySelectorAll('[data-t]').forEach(el => {
                 const key = el.getAttribute('data-t');
-                if (el.tagName === 'INPUT') el.placeholder = t[key];
-                else el.innerText = t[key];
+                if (el.tagName === 'INPUT') {
+                    el.placeholder = t[key];
+                } else {
+                    el.innerText = t[key];
+                }
             });
         }
 
-        // SMOOTH SCROLL FUNKTION
         window.scrollToAdd = (e) => {
             e.preventDefault();
             document.getElementById('addSection').scrollIntoView({ behavior: 'smooth' });
@@ -134,7 +135,7 @@
             --glow-green: rgba(60, 255, 60, 0.4);
         }
 
-        html { scroll-behavior: smooth; } /* Globales Smooth Scrolling */
+        html { scroll-behavior: smooth; }
 
         body {
             margin: 0; background: #0f172a; color: white;
@@ -151,7 +152,6 @@
         
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         
-        /* ANIMATIONEN WIEDER DA */
         .card {
             background: rgba(255,255,255,0.07); border-radius: 18px; padding: 25px;
             display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -179,7 +179,6 @@
         .icon { width: 45px; height: 45px; object-fit: contain; }
         .btn-del { position: absolute; top: 5px; right: 8px; background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 1.2rem; z-index: 10; }
 
-        /* Settings Animation */
         #settingsModal {
             position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(0px);
             display: none; align-items: center; justify-content: center; z-index: 1000;
