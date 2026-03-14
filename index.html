@@ -24,11 +24,11 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // --- SPRACH-LOGIK ---
+        // --- ÜBERSETZUNGS-LOGIK ---
         let currentLang = 'de';
         const translations = {
-            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", google: "Google Login", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen" },
-            en: { title: "My Central", login: "Login", reg: "Register", google: "Google Login", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No't have an account? Register", logout: "Logout", settings: "Settings" }
+            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", google: "Google Login", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche", music: "Musik" },
+            en: { title: "My Central", login: "Login", reg: "Register", google: "Google Login", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search", music: "Music" }
         };
 
         window.toggleLang = () => {
@@ -46,7 +46,7 @@
             });
         }
 
-        // --- AUTH & FIRESTORE ---
+        // --- AUTH ---
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { alert(e.message); } };
         window.handleSubmit = async () => {
             const email = document.getElementById('email').value;
@@ -96,7 +96,7 @@
                 const grid = document.getElementById('dynamicGrid');
                 const links = doc.exists() ? doc.data().links : [];
                 grid.innerHTML = links.map((l, i) => `
-                    <div class="card dynamic-card">
+                    <div class="card music-style">
                         <button class="btn-del" onclick="deleteFav(${i})">×</button>
                         <a href="${l.url}" target="_blank">
                             <img src="https://www.google.com/s2/favicons?sz=64&domain=${new URL(l.url).hostname}" class="icon">
@@ -106,10 +106,16 @@
             });
         }
 
-        // --- SETTINGS MODAL ---
+        // --- SETTINGS MODAL ANIMATION ---
         window.toggleSettings = () => {
             const modal = document.getElementById('settingsModal');
-            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+            if (modal.style.display === 'flex') {
+                modal.classList.remove('active');
+                setTimeout(() => modal.style.display = 'none', 300);
+            } else {
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('active'), 10);
+            }
         };
     </script>
 
@@ -123,31 +129,17 @@
         body {
             margin: 0; background: #0f172a; color: white;
             font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center;
-            overflow-x: hidden;
         }
 
         .top-nav {
             width: 100%; display: none; justify-content: flex-end; padding: 15px; gap: 15px; box-sizing: border-box;
             position: fixed; top: 0; z-index: 100;
         }
-        .nav-icon { font-size: 1.5rem; cursor: pointer; opacity: 0.7; transition: 0.3s; user-select: none; }
-        .nav-icon:hover { opacity: 1; transform: scale(1.1); }
-
-        /* Login */
-        #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; }
-        .login-card { 
-            background: rgba(255,255,255,0.05); padding: 30px; border-radius: 25px; 
-            backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); text-align: center; width: 320px;
-        }
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; background: #1e293b; color: white; box-sizing: border-box; outline: none; }
-        .btn-main { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #4facfe; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-main:active { transform: scale(0.98); }
-        .btn-google { background: white; color: #333; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .nav-icon { font-size: 1.5rem; cursor: pointer; opacity: 0.7; transition: 0.3s; }
 
         /* Dashboard */
         #dashboardSection { display: none; width: 90%; max-width: 600px; text-align: center; padding-top: 60px; }
-        h1 { font-size: 2rem; margin: 20px 0; text-shadow: 0 0 10px var(--glow-cyan); }
-
+        
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         
         .card {
@@ -156,25 +148,41 @@
             text-decoration: none; color: white; position: relative; border-bottom: 3px solid transparent;
             transition: 0.3s;
         }
-        .card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.1); }
+        
+        /* Musik Kachel Style vom Bild */
+        .music-style {
+            background: rgba(255,255,255,0.1); 
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
         .yt { border-color: #ff4444; box-shadow: 0 8px 15px var(--glow-red); }
         .tool { border-color: #4facfe; box-shadow: 0 8px 15px var(--glow-cyan); }
         .search { border-color: #00ff88; box-shadow: 0 8px 15px var(--glow-green); }
 
         .icon { width: 40px; height: 40px; }
-        .btn-del { position: absolute; top: 8px; right: 8px; background: none; border: none; color: rgba(255,255,255,0.2); cursor: pointer; font-size: 1.2rem; }
+        .btn-del { position: absolute; top: 8px; right: 8px; background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; }
 
-        /* Settings Modal */
+        /* Modal Animation */
         #settingsModal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(0px);
             display: none; align-items: center; justify-content: center; z-index: 1000;
+            opacity: 0; transition: 0.3s ease;
         }
+        #settingsModal.active { opacity: 1; backdrop-filter: blur(8px); }
+        
         .modal-content {
-            background: #1e293b; padding: 30px; border-radius: 20px; width: 280px; text-align: center;
-            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            background: #1e293b; padding: 30px; border-radius: 25px; width: 280px; text-align: center;
+            transform: scale(0.8); transition: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
+        #settingsModal.active .modal-content { transform: scale(1); }
 
-        .add-section { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; margin: 30px 0; border: 1px solid rgba(255,255,255,0.05); }
+        /* Restlicher Style bleibt wie davor */
+        #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; }
+        .login-card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 25px; width: 320px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: none; background: #1e293b; color: white; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #4facfe; color: white; font-weight: bold; cursor: pointer; }
+        .add-section { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; margin: 30px 0; }
     </style>
 </head>
 <body>
@@ -190,9 +198,7 @@
             <input type="email" id="email" placeholder="E-Mail">
             <input type="password" id="password" placeholder="Passwort">
             <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()" data-t="login">Anmelden</button>
-            <button class="btn-main btn-google" onclick="loginWithGoogle()">
-                <img src="https://www.google.com/s2/favicons?domain=google.com" width="18"> <span data-t="google">Google Login</span>
-            </button>
+            <button class="btn-main" style="background:white; color:#333; margin-top:10px;" onclick="loginWithGoogle()">Google Login</button>
             <p onclick="toggleMode()" id="switchBtn" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.6;" data-t="switch">Noch kein Account? Registrieren</p>
         </div>
     </div>
@@ -215,7 +221,7 @@
             </a>
             <a href="https://google.com" target="_blank" class="card search">
                 <img src="https://www.google.com/s2/favicons?sz=64&domain=google.com" class="icon">
-                <span>Suche</span>
+                <span data-t="search">Suche</span>
             </a>
         </div>
 
@@ -224,7 +230,7 @@
         <div class="add-section">
             <h3 data-t="add">Schnell-Links speichern</h3>
             <input type="text" id="favName" data-t="name" placeholder="Name">
-            <input type="text" id="favUrl" data-t="url" placeholder="URL (z.B. github.com)">
+            <input type="text" id="favUrl" data-t="url" placeholder="URL">
             <button class="btn-main" onclick="addFav()" data-t="save">Speichern ✨</button>
         </div>
     </div>
@@ -232,19 +238,16 @@
     <div id="settingsModal" onclick="if(event.target == this) toggleSettings()">
         <div class="modal-content">
             <h3 data-t="settings">Einstellungen</h3>
-            <p id="userEmail" style="font-size: 0.9rem; opacity: 0.6; margin-bottom: 20px;"></p>
+            <p id="userEmail" style="opacity: 0.6;"></p>
             <button class="btn-main" style="background: #ef4444;" onclick="logout()" data-t="logout">Abmelden</button>
-            <p onclick="toggleSettings()" style="margin-top: 15px; cursor: pointer; opacity: 0.4; font-size: 0.8rem;">Schließen</p>
         </div>
     </div>
 
     <script>
         function toggleMode() {
             const btn = document.getElementById('mainBtn');
-            const sBtn = document.getElementById('switchBtn');
             btn.dataset.mode = btn.dataset.mode === 'login' ? 'register' : 'login';
             btn.innerText = btn.dataset.mode === 'login' ? translations[currentLang].login : translations[currentLang].reg;
-            sBtn.innerText = btn.dataset.mode === 'login' ? translations[currentLang].switch : "Bereits dabei? Login";
         }
     </script>
 </body>
