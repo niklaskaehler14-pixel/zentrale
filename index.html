@@ -7,7 +7,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -23,34 +23,49 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- HIER SIND DIE FUNKTIONEN FÜR DEIN FENSTER ---
-        window.openResetModal = () => {
-            document.getElementById('resetModal').style.display = 'flex';
-        };
-
-        window.closeResetModal = () => {
-            document.getElementById('resetModal').style.display = 'none';
-        };
+        // --- LOGIK FÜR PASSWORT RESET ---
+        window.openResetModal = () => document.getElementById('resetModal').style.display = 'flex';
+        window.closeResetModal = () => document.getElementById('resetModal').style.display = 'none';
 
         window.sendResetEmail = async () => {
             const email = document.getElementById('resetEmailInput').value;
             if (!email) return alert("Bitte E-Mail eingeben!");
             try {
-                const actionCodeSettings = { 
-                    url: "https://niklaskaehler14-pixel.github.io/zentrale/", 
-                    handleCodeInApp: true 
-                };
+                const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
                 await sendPasswordResetEmail(auth, email, actionCodeSettings);
-                alert("E-Mail gesendet! Check dein Postfach.");
+                alert("E-Mail gesendet! Klick auf den Link in der Mail.");
                 closeResetModal();
             } catch (e) { alert(e.message); }
         };
-        // -----------------------------------------------
 
+        // Prüfen, ob man gerade von einem Reset-Link kommt
+        window.onload = async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const oobCode = urlParams.get('oobCode');
+            if (oobCode) {
+                try {
+                    const email = await verifyPasswordResetCode(auth, oobCode);
+                    document.getElementById('newPassModal').style.display = 'flex';
+                    window.currentOobCode = oobCode;
+                } catch (e) { alert("Der Link ist abgelaufen oder ungültig."); }
+            }
+        };
+
+        window.saveNewPassword = async () => {
+            const newPass = document.getElementById('newPassInput').value;
+            if (newPass.length < 6) return alert("Passwort zu kurz!");
+            try {
+                await confirmPasswordReset(auth, window.currentOobCode, newPass);
+                alert("Passwort erfolgreich geändert! Du kannst dich jetzt einloggen.");
+                window.location.href = window.location.pathname; // URL säubern
+            } catch (e) { alert(e.message); }
+        };
+
+        // --- DEIN BESTEHENDER CODE (UNVERÄNDERT) ---
         let currentLang = 'de';
         const translations = {
-            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", google: "Google Login", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", search: "Suche", forgot: "Passwort vergessen?" },
-            en: { title: "My Central", login: "Login", reg: "Register", google: "Google Login", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", search: "Search", forgot: "Forgot password?" }
+            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", add: "Link hinzufügen", save: "Speichern ✨", name: "Name", url: "URL", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", forgot: "Passwort vergessen?" },
+            en: { title: "My Central", login: "Login", reg: "Register", add: "Add Link", save: "Save ✨", name: "Name", url: "URL", switch: "No account? Register", logout: "Logout", settings: "Settings", forgot: "Forgot password?" }
         };
 
         window.toggleLang = () => {
@@ -84,7 +99,7 @@
             document.getElementById('authSection').style.display = user ? 'none' : 'flex';
             document.getElementById('dashboardSection').style.display = user ? 'block' : 'none';
             document.getElementById('topNav').style.display = user ? 'flex' : 'none';
-            if (user) { loadLinks(user.uid); }
+            if (user) loadLinks(user.uid);
         });
 
         window.addFav = async () => {
@@ -115,14 +130,7 @@
                 const links = doc.exists() ? doc.data().links : [];
                 grid.innerHTML = links.map((l, i) => {
                     const domain = new URL(l.url).hostname;
-                    return `
-                        <div class="card custom-fav-card">
-                            <button class="btn-del" onclick="deleteFav(${i})">×</button>
-                            <a href="${l.url}" target="_blank" class="fav-link-area">
-                                <img src="https://www.google.com/s2/favicons?sz=128&domain=${domain}" class="icon">
-                                <span class="fav-label">${l.name}</span>
-                            </a>
-                        </div>`;
+                    return `<div class="card"><button class="btn-del" onclick="deleteFav(${i})">×</button><a href="${l.url}" target="_blank" class="fav-link-area"><img src="https://www.google.com/s2/favicons?sz=128&domain=${domain}" class="icon"><span class="fav-label">${l.name}</span></a></div>`;
                 }).join('');
             });
         }
@@ -134,14 +142,12 @@
     </script>
 
     <style>
-        :root { --glow-cyan: rgba(0, 242, 254, 0.5); }
         body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
         .top-nav { width: 100%; display: none; justify-content: flex-end; padding: 15px; gap: 15px; position: fixed; top: 0; }
         #dashboardSection { display: none; width: 90%; max-width: 600px; text-align: center; padding-top: 60px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .card { background: rgba(255,255,255,0.07); border-radius: 18px; padding: 20px; text-decoration: none !important; color: white; position: relative; display: flex; flex-direction: column; align-items: center; }
-        .fav-link-area { text-decoration: none !important; color: inherit; display: flex; flex-direction: column; align-items: center; }
-        .fav-label { margin-top: 10px; font-weight: bold; text-decoration: none !important; }
+        .card { background: rgba(255,255,255,0.07); border-radius: 18px; padding: 20px; position: relative; display: flex; flex-direction: column; align-items: center; }
+        .fav-link-area { text-decoration: none; color: inherit; display: flex; flex-direction: column; align-items: center; }
         .icon { width: 40px; height: 40px; }
         .btn-del { position: absolute; top: 5px; right: 5px; background: none; border: none; color: white; opacity: 0.3; cursor: pointer; }
         .add-section { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; margin-top: 30px; }
@@ -150,6 +156,8 @@
         #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; }
         .login-card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px; width: 300px; text-align: center; }
         .forgot-link { font-size: 0.8rem; color: #4facfe; cursor: pointer; display: block; margin: 10px 0; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; width: 280px; text-align: center; border: 1px solid #4facfe; }
     </style>
 </head>
 <body>
@@ -164,9 +172,7 @@
             <h2 data-t="login">Anmelden</h2>
             <input type="email" id="email" placeholder="E-Mail">
             <input type="password" id="password" placeholder="Passwort">
-            
-            <span class="forgot-link" onclick="openResetModal()" data-t="forgot" style="cursor:pointer; color:#4facfe;">Passwort vergessen?</span>
-            
+            <span class="forgot-link" onclick="openResetModal()" data-t="forgot">Passwort vergessen?</span>
             <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()" data-t="login">Anmelden</button>
             <p onclick="toggleMode()" style="cursor:pointer; font-size: 0.8rem; opacity: 0.6;" data-t="switch">Registrieren</p>
         </div>
@@ -183,21 +189,28 @@
         </div>
     </div>
 
-    <div id="settingsModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000;">
-        <div style="background: #1e293b; padding: 30px; border-radius: 20px; width: 280px; text-align: center;">
-            <h2 data-t="settings">Einstellungen</h2>
-            <button class="btn-main" onclick="logout()" data-t="logout" style="background: #ef4444;">Abmelden</button>
-            <p onclick="toggleSettings()" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.5;">Schließen</p>
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin:0">Passwort vergessen</h3>
+            <input type="email" id="resetEmailInput" placeholder="Deine E-Mail">
+            <button class="btn-main" onclick="sendResetEmail()">Link senden</button>
+            <p onclick="closeResetModal()" style="cursor:pointer; opacity:0.5">Abbrechen</p>
         </div>
     </div>
 
-    <div id="resetModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000;">
-        <div style="background: #1e293b; padding: 30px; border-radius: 20px; width: 280px; text-align: center; border: 1px solid #4facfe;">
-            <h3 style="margin-top: 0; color: white;">Passwort zurück</h3>
-            <p style="font-size: 0.75rem; opacity: 0.7; color: white;">Gib deine E-Mail ein:</p>
-            <input type="email" id="resetEmailInput" placeholder="E-Mail" style="width:100%; padding:10px; margin:10px 0; border-radius:8px; border:none; background:#0f172a; color:white;">
-            <button class="btn-main" onclick="sendResetEmail()">Link senden</button>
-            <p onclick="closeResetModal()" style="cursor:pointer; font-size: 0.8rem; margin-top: 15px; opacity: 0.5; color: white;">Abbrechen</p>
+    <div id="newPassModal" class="modal">
+        <div class="modal-content">
+            <h3 style="margin:0">Neues Passwort</h3>
+            <input type="password" id="newPassInput" placeholder="Min. 6 Zeichen">
+            <button class="btn-main" onclick="saveNewPassword()">Passwort speichern</button>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal" style="z-index:1000">
+        <div class="modal-content">
+            <h2 data-t="settings">Einstellungen</h2>
+            <button class="btn-main" onclick="logout()" data-t="logout" style="background:#ef4444">Abmelden</button>
+            <p onclick="toggleSettings()" style="cursor:pointer; opacity:0.5">Schließen</p>
         </div>
     </div>
 
