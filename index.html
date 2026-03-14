@@ -12,12 +12,15 @@
             --bg-medium: #0f172a;
             --bg-light: #1e293b;
             --yt-glow: rgba(255, 0, 0, 0.4);
-            --ublock-glow: rgba(128, 0, 0, 0.4);
             --tool-glow: rgba(0, 242, 254, 0.4);
-            --search-glow: rgba(0, 255, 136, 0.4);
         }
 
-        html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; background-color: var(--bg-dark); }
+        /* PERFORMANCE BOOST: Verhindert Ruckeln beim Scrollen */
+        html, body { 
+            margin: 0; padding: 0; width: 100%; min-height: 100%; 
+            background-color: var(--bg-dark);
+            -webkit-font-smoothing: antialiased;
+        }
 
         body {
             padding: 15px; box-sizing: border-box;
@@ -25,25 +28,33 @@
             background-size: cover; font-family: 'Segoe UI', Roboto, sans-serif;
             display: flex; flex-direction: column; align-items: center; color: white;
             position: relative; overflow-x: hidden;
+            transform: translateZ(0); /* Aktiviert GPU-Beschleunigung */
         }
 
         /* Prank Overlay */
         #prankOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 9999; }
 
-        /* Prank-Button noch dezentraler (fast unsichtbar) */
         .settings-prank {
             position: absolute; top: 22px; right: 85px;
-            font-size: 16px; color: rgba(255, 255, 255, 0.05); /* Sehr transparent */
-            cursor: pointer; z-index: 1000; text-decoration: none;
+            font-size: 16px; color: rgba(255, 255, 255, 0.05);
+            cursor: pointer; z-index: 1000;
         }
 
+        /* ANIMATION FÜR SPRACHE */
         .lang-switch {
             position: absolute; top: 15px; right: 15px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.07);
             padding: 8px 12px; border-radius: 10px;
-            cursor: pointer; backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1); font-size: 14px; z-index: 100;
+            cursor: pointer; backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            font-size: 14px; z-index: 100;
+            transition: all 0.3s ease;
         }
+        .lang-switch:active { transform: scale(0.9); }
+        
+        #langText { display: inline-block; transition: all 0.3s ease; }
+        .fade-out { opacity: 0; transform: translateY(-10px); }
+        .fade-in { opacity: 1; transform: translateY(0); }
 
         h1 { 
             margin-top: 60px; font-weight: 300; letter-spacing: 2px; text-align: center;
@@ -53,33 +64,30 @@
         .main-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 600px; margin: 20px 0; }
         .fav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; width: 100%; max-width: 600px; margin-bottom: 30px; }
 
-        @media (max-width: 480px) { .main-grid { grid-template-columns: 1fr; } .fav-grid { grid-template-columns: repeat(2, 1fr); } }
-
-        /* ALLGEMEINE KARTEN-LOGIK */
-        .card, .fav-card-item {
-            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px; padding: 18px;
-            text-align: center; color: white; font-weight: bold;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-            cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;
-            text-decoration: none; position: relative;
+        @media (max-width: 480px) { 
+            .main-grid { grid-template-columns: 1fr; } 
+            .fav-grid { grid-template-columns: repeat(2, 1fr); }
+            /* Weniger Blur auf Handy für mehr FPS */
+            .card, .fav-card-item { backdrop-filter: blur(5px) !important; }
         }
 
-        /* INDIVIDUELLE LEUCHT-EFFEKTE BEIM HOVER & KLICK */
-        .yt-card:hover { border-color: #ff0000; box-shadow: 0 10px 30px var(--yt-glow); transform: translateY(-3px); }
-        .ublock-card:hover { border-color: #800000; box-shadow: 0 10px 30px var(--ublock-glow); transform: translateY(-3px); }
-        .tool-card:hover { border-color: var(--primary); box-shadow: 0 10px 30px var(--tool-glow); transform: translateY(-3px); }
-        .search-card:hover { border-color: #00ff88; box-shadow: 0 10px 30px var(--search-glow); transform: translateY(-3px); }
-        
-        /* Favoriten Leuchten */
-        .fav-card-item:hover { border-color: var(--primary); box-shadow: 0 10px 30px var(--tool-glow); transform: translateY(-3px); }
+        .card, .fav-card-item {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px; padding: 18px;
+            text-align: center; color: white; font-weight: bold;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px;
+            text-decoration: none;
+            will-change: transform; /* Sagt dem Browser: Das hier wird sich bewegen */
+        }
 
-        /* Klick-Effekt für Handy (Puls) */
-        .card:active, .fav-card-item:active { transform: scale(0.96); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .yt-card:hover { border-color: #ff0000; box-shadow: 0 10px 25px var(--yt-glow); transform: translateY(-3px); }
+        .tool-card:hover { border-color: var(--primary); box-shadow: 0 10px 25px var(--tool-glow); transform: translateY(-3px); }
+        .card:active { transform: scale(0.96); }
 
-        .favicon { width: 30px; height: 30px; border-radius: 6px; }
+        .favicon { width: 30px; height: 30px; border-radius: 6px; pointer-events: none; }
         .yt-card { border-bottom: 3px solid #ff0000; }
         .ublock-card { border-bottom: 3px solid #800000; }
         .tool-card { border-bottom: 3px solid var(--primary); }
@@ -94,24 +102,21 @@
         input { 
             padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); 
             background: rgba(0,0,0,0.3); color: white; margin-bottom: 10px; width: 100%; box-sizing: border-box;
-            font-size: 16px; outline: none; transition: 0.2s;
+            font-size: 16px; outline: none; -webkit-appearance: none;
         }
-        input:focus { border-color: var(--primary); background: rgba(0,0,0,0.5); }
 
         .btn-add {
             background: linear-gradient(to right, var(--primary), var(--secondary));
             border: none; padding: 14px; border-radius: 10px; color: #0b0e14;
-            font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; transition: 0.2s;
+            font-weight: bold; width: 100%; font-size: 16px;
         }
-        .btn-add:hover { opacity: 0.9; transform: scale(0.99); }
 
         .btn-del {
             position: absolute; top: 5px; right: 5px;
             background: rgba(233, 69, 96, 0.9); border: none; 
             border-radius: 50%; color: white; width: 22px; height: 22px;
-            font-size: 12px; cursor: pointer; display: none;
+            font-size: 12px;
         }
-        .fav-card-item:hover .btn-del { display: block; }
     </style>
 </head>
 <body>
@@ -120,10 +125,12 @@
 
     <div id="prankOverlay">
         <iframe id="prankVideo" width="100%" height="100%" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-        <button onclick="stopPrank()" style="position:absolute; top:20px; right:20px; background:white; border:none; padding:10px; border-radius:10px; font-weight:bold; opacity: 0.3;">X</button>
+        <button onclick="stopPrank()" style="position:absolute; top:20px; right:20px; background:white; border:none; padding:10px; border-radius:10px; opacity: 0.5;">X</button>
     </div>
 
-    <div class="lang-switch" onclick="toggleLang()" id="langBtn">🇩🇪 DE</div>
+    <div class="lang-switch" onclick="toggleLang()">
+        <span id="langText">🇩🇪 DE</span>
+    </div>
 
     <h1 id="title">Meine Zentrale</h1>
 
@@ -156,34 +163,43 @@
     </div>
 
     <script>
-        // Prank & Favoriten-Logik bleibt gleich
         function startPrank() {
-            const overlay = document.getElementById('prankOverlay');
-            const video = document.getElementById('prankVideo');
-            video.src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
-            overlay.style.display = 'block';
+            document.getElementById('prankVideo').src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
+            document.getElementById('prankOverlay').style.display = 'block';
         }
         function stopPrank() {
-            const overlay = document.getElementById('prankOverlay');
-            const video = document.getElementById('prankVideo');
-            video.src = ""; overlay.style.display = 'none';
+            document.getElementById('prankVideo').src = "";
+            document.getElementById('prankOverlay').style.display = 'none';
         }
+
         let currentLang = 'de';
         const texts = {
             de: { title: "Meine Zentrale", addLink: "Link dazu", search: "Suche", manager: "Schnell-Links speichern", submit: "Hinzufügen", btn: "🇩🇪 DE" },
             en: { title: "My Central", addLink: "Add Link", search: "Search", manager: "Save Quick-Links", submit: "Add now", btn: "🇺🇸 EN" }
         };
+
         function toggleLang() {
-            currentLang = currentLang === 'de' ? 'en' : 'de';
-            const t = texts[currentLang];
-            document.getElementById('title').innerText = t.title;
-            document.getElementById('btnAddLink').innerText = t.addLink;
-            document.getElementById('btnSearch').innerText = t.search;
-            document.getElementById('managerTitle').innerText = t.manager;
-            document.getElementById('btnAddSubmit').innerText = t.submit;
-            document.getElementById('langBtn').innerText = t.btn;
+            const el = document.getElementById('langText');
+            el.classList.add('fade-out');
+            
+            setTimeout(() => {
+                currentLang = currentLang === 'de' ? 'en' : 'de';
+                const t = texts[currentLang];
+                document.getElementById('title').innerText = t.title;
+                document.getElementById('btnAddLink').innerText = t.addLink;
+                document.getElementById('btnSearch').innerText = t.search;
+                document.getElementById('managerTitle').innerText = t.manager;
+                document.getElementById('btnAddSubmit').innerText = t.submit;
+                el.innerText = t.btn;
+                
+                el.classList.remove('fade-out');
+                el.classList.add('fade-in');
+                setTimeout(() => el.classList.remove('fade-in'), 300);
+            }, 300);
         }
+
         document.addEventListener('DOMContentLoaded', displayFavs);
+
         function addFav() {
             let name = document.getElementById('favName').value;
             let url = document.getElementById('favUrl').value;
@@ -197,6 +213,7 @@
                 displayFavs();
             }
         }
+
         function displayFavs() {
             const grid = document.getElementById('favGrid');
             const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
@@ -213,6 +230,7 @@
                 `;
             }).join('');
         }
+
         function deleteFav(index) {
             const favorites = JSON.parse(localStorage.getItem('myCentralFavs') || '[]');
             favorites.splice(index, 1);
