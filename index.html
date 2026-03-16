@@ -113,7 +113,13 @@
             const m = document.getElementById('settingsModal');
             m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
         };
-        window.logout = () => signOut(auth);
+        
+        // HIER IST DER FIX: Das Fenster wird jetzt explizit geschlossen beim Abmelden
+        window.logout = () => { 
+            signOut(auth);
+            document.getElementById('settingsModal').style.display = 'none';
+        };
+
         window.scrollToAdd = (e) => { e.preventDefault(); document.getElementById('addSection').scrollIntoView({ behavior: 'smooth' }); };
     </script>
 
