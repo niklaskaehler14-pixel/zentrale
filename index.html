@@ -33,7 +33,6 @@
             navigator.serviceWorker.register('data:application/javascript,self.addEventListener("fetch", function(event){});');
         }
 
-        // --- AUTH & LOGIK ---
         window.openResetModal = () => document.getElementById('resetModal').style.display = 'flex';
         window.closeResetModal = () => document.getElementById('resetModal').style.display = 'none';
         window.sendResetEmail = async () => {
@@ -58,8 +57,8 @@
 
         let currentLang = 'de';
         const translations = {
-            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", add: "Link speichern", save: "Speichern ✨", name: "Name", url: "URL", switch: "Registrieren", logout: "Abmelden", settings: "Settings", forgot: "Passwort vergessen?", search: "Suche", addTile: "Link +" },
-            en: { title: "My Central", login: "Login", reg: "Register", add: "Save Link", save: "Save ✨", name: "Name", url: "URL", switch: "Register", logout: "Logout", settings: "Settings", forgot: "Forgot?", search: "Search", addTile: "Link +" }
+            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", add: "Link speichern", save: "Speichern ✨", name: "Name", url: "URL", switch: "Registrieren", logout: "Abmelden", settings: "Settings", forgot: "Passwort vergessen?", search: "Suche", addTile: "Link hinzufügen" },
+            en: { title: "My Central", login: "Login", reg: "Register", add: "Save Link", save: "Save ✨", name: "Name", url: "URL", switch: "Register", logout: "Logout", settings: "Settings", forgot: "Forgot?", search: "Search", addTile: "Add Link" }
         };
 
         window.toggleLang = () => {
@@ -145,18 +144,19 @@
     </script>
 
     <style>
-        /* ALLGEMEIN & HANDY (Performance Fokus) */
         body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
         .top-nav { width: 100%; display: none; justify-content: flex-end; padding: 15px; gap: 15px; position: fixed; top: 0; z-index: 500; }
         #dashboardSection { display: none; width: 95%; max-width: 1000px; text-align: center; padding-top: 70px; padding-bottom: 50px; }
-        h1 { font-size: 2rem; margin-bottom: 25px; }
+        h1 { font-size: 2rem; margin-bottom: 25px; text-align: center; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
         
-        /* Handy Design: Einfach & schnell */
-        .card { background: #1e293b; border-radius: 12px; padding: 15px; position: relative; display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(255, 255, 255, 0.1); min-height: 110px; text-decoration: none; color: white; }
+        /* Links & Karten Styling */
+        .card { background: #1e293b; border-radius: 12px; padding: 15px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); min-height: 110px; text-decoration: none !important; color: white !important; }
         .card::before { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; background: #4facfe; }
         
-        /* LAPTOP / DESKTOP OPTIMIERUNG (Schöne Effekte) */
+        /* Entfernt Unterstriche und lila Farbe global für alle Links in Karten */
+        .fav-link-area, .fav-link-area:visited, .fav-link-area:active, .card, .card:visited { text-decoration: none !important; color: white !important; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
+
         @media (min-width: 1024px) {
             h1 { font-size: 3rem; text-shadow: 0 0 20px rgba(79, 172, 254, 0.6); }
             .grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
@@ -171,12 +171,11 @@
         .btn-glow-active { animation: quickGlow 0.6s ease-out; }
         @keyframes quickGlow { 0% { filter: brightness(1.5); transform: scale(1.02); } 100% { filter: brightness(1); transform: scale(1); } }
 
-        .fav-link-area { text-decoration: none; color: inherit; display: flex; flex-direction: column; align-items: center; width: 100%; }
-        .fav-label { margin-top: 8px; font-weight: bold; font-size: 0.95rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; width: 100%; }
-        .icon { width: 40px; height: 40px; }
+        .fav-label { margin-top: 10px; font-weight: bold; font-size: 0.95rem; text-align: center; width: 100%; display: block; }
+        .icon { width: 40px; height: 40px; margin: 0 auto; display: block; }
         .btn-del { position: absolute; top: 5px; right: 5px; background: none; border: none; color: white; opacity: 0.4; font-size: 1.1rem; cursor: pointer; }
         .add-section { background: rgba(30, 41, 59, 0.8); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); text-align: left; margin-top: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0 12px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 1rem; }
+        input { width: 100%; padding: 12px; margin: 8px 0 12px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 1rem; text-align: left; }
         .btn-main { width: 100%; padding: 14px; border-radius: 10px; border: none; background: linear-gradient(90deg, #00f2fe, #4facfe); color: white; font-weight: bold; font-size: 1rem; cursor: pointer; }
         
         #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; }
@@ -210,7 +209,7 @@
                 <span class="fav-label">YouTube</span>
             </a>
             <a href="#" onclick="scrollToAdd(event)" class="card">
-                <span style="font-size: 1.8rem;">+</span>
+                <span style="font-size: 1.8rem; display: block;">+</span>
                 <span class="fav-label" data-t="addTile">Link hinzufügen</span>
             </a>
             <a href="https://google.com" target="_blank" class="card">
@@ -220,7 +219,7 @@
         </div>
         <div id="dynamicGrid" class="grid"></div>
         <div class="add-section" id="addSection">
-            <h3 data-t="add" style="margin-top:0">Schnell-Links</h3>
+            <h3 data-t="add" style="margin-top:0; text-align: center;">Schnell-Links</h3>
             <input type="text" id="favName" data-t="name" placeholder="Name">
             <input type="text" id="favUrl" data-t="url" placeholder="URL">
             <button class="btn-main" onclick="addFav()" data-t="save">Speichern ✨</button>
