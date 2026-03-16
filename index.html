@@ -29,82 +29,57 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Service Worker für App-Funktion
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:application/javascript,self.addEventListener("fetch", function(event){});');
         }
 
-        window.openResetModal = () => document.getElementById('resetModal').style.display = 'flex';
-        window.closeResetModal = () => document.getElementById('resetModal').style.display = 'none';
-        window.sendResetEmail = async () => {
-            const email = document.getElementById('resetEmailInput').value;
-            if (!email) return alert("E-Mail?");
-            try { await sendPasswordResetEmail(auth, email); alert("Gesendet!"); closeResetModal(); } catch (e) { alert(e.message); }
-        };
-
-        window.onload = async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const oobCode = urlParams.get('oobCode');
-            if (oobCode) {
-                try { await verifyPasswordResetCode(auth, oobCode); document.getElementById('newPassModal').style.display = 'flex'; window.currentOobCode = oobCode; } catch (e) { alert("Link ungültig."); }
-            }
-        };
-
-        window.saveNewPassword = async () => {
-            const newPass = document.getElementById('newPassInput').value;
-            if (newPass.length < 6) return alert("Zu kurz!");
-            try { await confirmPasswordReset(auth, window.currentOobCode, newPass); alert("Geändert!"); window.location.href = window.location.pathname; } catch (e) { alert(e.message); }
-        };
-
-        let currentLang = 'de';
-        const translations = {
-            de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", add: "Schnell-Links", save: "Speichern ✨", name: "Name", url: "URL", switch: "Registrieren", logout: "Abmelden", settings: "Settings", forgot: "Passwort vergessen?", search: "Suche", addTile: "Link hinzufügen" },
-            en: { title: "My Central", login: "Login", reg: "Register", add: "Quick-Links", save: "Save ✨", name: "Name", url: "URL", switch: "Register", logout: "Logout", settings: "Settings", forgot: "Forgot?", search: "Search", addTile: "Add Link" }
-        };
-
-        window.toggleLang = () => {
-            currentLang = currentLang === 'de' ? 'en' : 'de';
-            document.getElementById('langBtn').innerText = currentLang === 'de' ? '🇩🇪' : '🇺🇸';
-            updateUI();
-        };
-
-        function updateUI() {
-            const t = translations[currentLang];
-            document.querySelectorAll('[data-t]').forEach(el => {
-                const key = el.getAttribute('data-t');
-                if (el.tagName === 'INPUT') el.placeholder = t[key];
-                else el.innerText = t[key];
-            });
-        }
-
-        window.scrollToAdd = (e) => {
-            e.preventDefault();
-            document.getElementById('addSection').scrollIntoView({ behavior: 'smooth' });
-            document.getElementById('favName').focus();
-        };
-
+        // --- AUTH LOGIK ---
         window.handleSubmit = async () => {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
             const mode = document.getElementById('mainBtn').dataset.mode;
+            if(!email || !pass) return alert("Bitte Felder ausfüllen.");
             try {
                 if (mode === 'register') await createUserWithEmailAndPassword(auth, email, pass);
                 else await signInWithEmailAndPassword(auth, email, pass);
-            } catch (e) { alert(e.message); }
+            } catch (e) { alert("Fehler: " + e.message); }
         };
-        
+
         window.logout = () => { signOut(auth); toggleSettings(); };
 
+        // Passwort vergessen
+        window.openResetModal = () => document.getElementById('resetModal').style.display = 'flex';
+        window.closeResetModal = () => document.getElementById('resetModal').style.display = 'none';
+        window.sendResetEmail = async () => {
+            const email = document.getElementById('resetEmailInput').value;
+            if (!email) return alert("Bitte E-Mail angeben.");
+            try { await sendPasswordResetEmail(auth, email); alert("Reset-Link wurde gesendet!"); closeResetModal(); } catch (e) { alert(e.message); }
+        };
+
+        // Status-Check (WICHTIG!)
         onAuthStateChanged(auth, (user) => {
-            document.getElementById('authSection').style.display = user ? 'flex' : 'none';
-            document.getElementById('dashboardSection').style.display = user ? 'block' : 'none';
-            document.getElementById('topNav').style.display = user ? 'flex' : 'none';
-            if (user) { document.getElementById('userEmailDisplay').innerText = user.email; loadLinks(user.uid); }
+            const authSec = document.getElementById('authSection');
+            const dashSec = document.getElementById('dashboardSection');
+            const nav = document.getElementById('topNav');
+
+            if (user) {
+                authSec.style.display = 'none';
+                dashSec.style.display = 'block';
+                nav.style.display = 'flex';
+                document.getElementById('userEmailDisplay').innerText = user.email;
+                loadLinks(user.uid);
+            } else {
+                authSec.style.display = 'flex';
+                dashSec.style.display = 'none';
+                nav.style.display = 'none';
+            }
         });
 
+        // --- LINK VERWALTUNG ---
         window.addFav = async () => {
             const name = document.getElementById('favName').value;
             let url = document.getElementById('favUrl').value;
-            const saveBtn = document.querySelector('.add-section .btn-main');
             if (name && url && auth.currentUser) {
                 if (!url.startsWith('http')) url = 'https://' + url;
                 const docRef = doc(db, "users", auth.currentUser.uid);
@@ -112,9 +87,8 @@
                 let links = snap.exists() ? snap.data().links : [];
                 links.push({ name, url });
                 await setDoc(docRef, { links });
-                saveBtn.classList.add('btn-glow-active');
-                setTimeout(() => saveBtn.classList.remove('btn-glow-active'), 600);
-                document.getElementById('favName').value = ''; document.getElementById('favUrl').value = '';
+                document.getElementById('favName').value = ''; 
+                document.getElementById('favUrl').value = '';
             }
         };
 
@@ -129,95 +103,98 @@
         function loadLinks(uid) {
             onSnapshot(doc(db, "users", uid), (doc) => {
                 const grid = document.getElementById('dynamicGrid');
-                const links = doc.exists() ? doc.data().links : [];
-                grid.innerHTML = links.map((l, i) => {
-                    const domain = new URL(l.url).hostname;
-                    return `<div class="card"><button class="btn-del" onclick="deleteFav(${i})">×</button><a href="${l.url}" target="_blank" class="fav-link-area"><img src="https://www.google.com/s2/favicons?sz=128&domain=${domain}" class="icon"><span class="fav-label">${l.name}</span></a></div>`;
-                }).join('');
+                if (doc.exists()) {
+                    const links = doc.data().links || [];
+                    grid.innerHTML = links.map((l, i) => {
+                        const domain = new URL(l.url).hostname;
+                        return `<div class="card"><button class="btn-del" onclick="deleteFav(${i})">×</button><a href="${l.url}" target="_blank" class="fav-link-area"><img src="https://www.google.com/s2/favicons?sz=128&domain=${domain}" class="icon"><span class="fav-label">${l.name}</span></a></div>`;
+                    }).join('');
+                }
             });
         }
 
+        // Helfer
         window.toggleSettings = () => {
             const modal = document.getElementById('settingsModal');
             modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
         };
+        window.scrollToAdd = (e) => {
+            e.preventDefault();
+            document.getElementById('addSection').scrollIntoView({ behavior: 'smooth' });
+        };
     </script>
 
     <style>
-        /* BASIS & LAYOUT */
-        body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        /* RESET & BASE */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: #0f172a; color: white; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         
-        .top-nav { width: 100%; display: none; justify-content: flex-end; padding: 20px; gap: 15px; position: fixed; top: 0; z-index: 500; box-sizing: border-box; }
+        /* NAVIGATION */
+        .top-nav { width: 100%; display: none; justify-content: flex-end; padding: 20px; gap: 20px; position: fixed; top: 0; z-index: 100; }
         
-        #dashboardSection { display: none; width: 90%; max-width: 1100px; text-align: center; padding: 80px 0 50px 0; margin: 0 auto; }
-        
-        h1 { font-size: 2.2rem; margin-bottom: 40px; text-align: center; text-shadow: 0 0 15px rgba(79, 172, 254, 0.5); }
+        /* LOGIN BEREICH (Zentriert) */
+        #authSection { height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; background: #0f172a; }
+        .login-card { background: #1e293b; padding: 40px 30px; border-radius: 20px; width: 90%; max-width: 380px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
 
-        /* GRID MIT ABSTÄNDEN */
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; margin-bottom: 25px; width: 100%; }
+        /* DASHBOARD */
+        #dashboardSection { display: none; width: 90%; max-width: 1000px; padding: 100px 0 50px 0; text-align: center; }
+        h1 { font-size: 2.2rem; margin-bottom: 30px; text-shadow: 0 0 15px rgba(79, 172, 254, 0.4); }
 
-        /* KACHELN STYLING */
-        .card { background: #1e293b; border-radius: 16px; padding: 20px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); min-height: 120px; text-decoration: none !important; color: white !important; overflow: hidden; box-sizing: border-box; }
+        /* GRID & CARDS */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; margin-bottom: 30px; }
         
-        /* Der Leuchteffekt - jetzt sauber in der Rundung */
-        .card::before { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: #4facfe; box-shadow: 0 -2px 10px rgba(79, 172, 254, 0.4); }
+        .card { background: #1e293b; border-radius: 16px; padding: 20px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.1); min-height: 120px; overflow: hidden; transition: transform 0.2s; }
+        .card::before { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: #4facfe; }
 
-        .fav-link-area { text-decoration: none !important; color: white !important; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
-        
-        .fav-label { margin-top: 12px; font-weight: bold; font-size: 1rem; text-align: center; width: 100%; display: block; overflow: hidden; text-overflow: ellipsis; }
-        
-        .icon { width: 44px; height: 44px; margin: 0 auto; display: block; }
+        /* Links ohne Unterstrich & lila Farbe */
+        .fav-link-area { text-decoration: none !important; color: white !important; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .fav-label { margin-top: 10px; font-weight: bold; font-size: 1rem; }
+        .icon { width: 40px; height: 40px; }
 
-        /* DESKTOP UPGRADE */
+        /* DESKTOP OPTIMIERUNG */
         @media (min-width: 1024px) {
-            h1 { font-size: 3.5rem; }
-            .grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; }
-            .card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); transition: transform 0.3s ease, box-shadow 0.3s ease; }
-            .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-color: rgba(79, 172, 254, 0.4); }
-            .card::before { background: linear-gradient(90deg, #ff007a, #00f2fe, #4facfe); }
+            .grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 25px; }
+            .card:hover { transform: translateY(-5px); border-color: #4facfe; box-shadow: 0 5px 20px rgba(79, 172, 254, 0.2); }
+            .card::before { background: linear-gradient(90deg, #00f2fe, #4facfe); }
         }
 
-        /* ANMELDUNG - PERFEKT ZENTRIERT */
-        #authSection { height: 100vh; display: flex; align-items: center; justify-content: center; width: 100%; position: fixed; inset: 0; background: #0f172a; z-index: 1000; }
-        
-        .login-card { background: #1e293b; padding: 40px 30px; border-radius: 20px; width: 90%; max-width: 380px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-
-        /* FORMULAR ELEMENTE */
-        .add-section { background: rgba(30, 41, 59, 0.6); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); margin-top: 40px; text-align: center; }
-        
-        input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 1rem; text-align: center; box-sizing: border-box; outline: none; }
-        
+        /* FORMULAR & BUTTONS */
+        .add-section { background: rgba(30, 41, 59, 0.5); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); margin-top: 30px; }
+        input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #0f172a; color: white; font-size: 1rem; text-align: center; outline: none; }
         input:focus { border-color: #4facfe; }
-
-        .btn-main { width: 100%; padding: 15px; border-radius: 12px; border: none; background: linear-gradient(90deg, #00f2fe, #4facfe); color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: opacity 0.2s; margin-top: 10px; }
         
+        .btn-main { width: 100%; padding: 15px; border-radius: 10px; border: none; background: linear-gradient(90deg, #00f2fe, #4facfe); color: white; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 10px; }
         .btn-main:active { transform: scale(0.98); }
+        
+        .btn-del { position: absolute; top: 8px; right: 8px; background: none; border: none; color: white; opacity: 0.3; font-size: 1.2rem; cursor: pointer; }
+        .btn-del:hover { opacity: 1; }
 
-        .btn-del { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.1); border: none; color: white; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; z-index: 10; }
-
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
-        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; width: 100%; max-width: 340px; text-align: center; border: 1px solid #4facfe; }
+        /* MODALS */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: #1e293b; padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; border: 1px solid #4facfe; }
     </style>
 </head>
 <body>
+
     <div class="top-nav" id="topNav">
-        <span onclick="toggleLang()" style="cursor:pointer; font-size: 1.5rem;" id="langBtn">🇩🇪</span>
         <span onclick="toggleSettings()" style="cursor:pointer; font-size: 1.5rem;">⚙️</span>
     </div>
 
     <div id="authSection">
         <div class="login-card">
-            <h2 data-t="login" style="margin-bottom: 30px;">Anmelden</h2>
+            <h2 id="authTitle">Anmelden</h2>
             <input type="email" id="email" placeholder="E-Mail">
             <input type="password" id="password" placeholder="Passwort">
-            <span onclick="openResetModal()" style="font-size: 0.85rem; color: #4facfe; cursor: pointer; display: block; margin: 15px 0;" data-t="forgot">Passwort vergessen?</span>
-            <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()" data-t="login">Anmelden</button>
-            <p onclick="toggleMode()" style="cursor:pointer; font-size: 0.9rem; opacity: 0.6; margin-top: 25px;" data-t="switch">Noch kein Account? Registrieren</p>
+            
+            <p onclick="openResetModal()" style="font-size: 0.8rem; color: #4facfe; cursor: pointer; margin: 10px 0;">Passwort vergessen?</p>
+            
+            <button class="btn-main" id="mainBtn" data-mode="login" onclick="handleSubmit()">Anmelden</button>
+            <p id="toggleMode" onclick="switchMode()" style="cursor:pointer; font-size: 0.85rem; opacity: 0.6; margin-top: 20px;">Noch kein Account? Registrieren</p>
         </div>
     </div>
 
     <div id="dashboardSection">
-        <h1 data-t="title">Meine Zentrale</h1>
+        <h1>Meine Zentrale</h1>
         
         <div class="grid">
             <a href="https://youtube.com" target="_blank" class="card">
@@ -225,36 +202,59 @@
                 <span class="fav-label">YouTube</span>
             </a>
             <a href="#" onclick="scrollToAdd(event)" class="card">
-                <span style="font-size: 2.2rem; line-height: 1;">+</span>
-                <span class="fav-label" data-t="addTile">Link hinzufügen</span>
+                <span style="font-size: 2rem;">+</span>
+                <span class="fav-label">Hinzufügen</span>
             </a>
             <a href="https://google.com" target="_blank" class="card">
                 <img src="https://www.google.com/s2/favicons?sz=128&domain=google.com" class="icon">
-                <span class="fav-label" data-t="search">Suche</span>
+                <span class="fav-label">Suche</span>
             </a>
         </div>
 
         <div id="dynamicGrid" class="grid"></div>
 
         <div class="add-section" id="addSection">
-            <h3 data-t="add" style="margin-top:0; margin-bottom: 20px;">Schnell-Links speichern</h3>
-            <input type="text" id="favName" data-t="name" placeholder="Name">
-            <input type="text" id="favUrl" data-t="url" placeholder="URL (z.B. google.de)">
-            <button class="btn-main" onclick="addFav()" data-t="save">Speichern ✨</button>
+            <h3>Neuer Link</h3>
+            <input type="text" id="favName" placeholder="Name">
+            <input type="text" id="favUrl" placeholder="URL (z.B. google.de)">
+            <button class="btn-main" onclick="addFav()">Speichern ✨</button>
         </div>
     </div>
 
-    <div id="resetModal" class="modal"><div class="modal-content"><h3>Reset</h3><input type="email" id="resetEmailInput" placeholder="Deine E-Mail"><button class="btn-main" onclick="sendResetEmail()">Link senden</button><p onclick="closeResetModal()" style="cursor:pointer; opacity:0.5; margin-top:20px">Abbrechen</p></div></div>
-    <div id="newPassModal" class="modal"><div class="modal-content"><h3>Neues Passwort</h3><input type="password" id="newPassInput" placeholder="Min. 6 Zeichen"><button class="btn-main" onclick="saveNewPassword()">Speichern</button></div></div>
-    <div id="settingsModal" class="modal" style="z-index:1000"><div class="modal-content"><h2>Settings</h2><p id="userEmailDisplay" style="font-size:0.9rem; color:#4facfe; margin-bottom:20px"></p><button class="btn-main" onclick="logout()" style="background:#ef4444">Abmelden</button><p onclick="toggleSettings()" style="cursor:pointer; opacity:0.5; margin-top:20px">Schließen</p></div></div>
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <h3>Passwort zurücksetzen</h3>
+            <input type="email" id="resetEmailInput" placeholder="Deine E-Mail">
+            <button class="btn-main" onclick="sendResetEmail()">Link senden</button>
+            <p onclick="closeResetModal()" style="cursor:pointer; opacity:0.5; margin-top:20px">Abbrechen</p>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <p id="userEmailDisplay" style="color:#4facfe; margin-bottom:20px"></p>
+            <button class="btn-main" onclick="logout()" style="background:#ef4444">Abmelden</button>
+            <p onclick="toggleSettings()" style="cursor:pointer; opacity:0.5; margin-top:20px">Schließen</p>
+        </div>
+    </div>
 
     <script>
-        function toggleMode() {
+        function switchMode() {
             const btn = document.getElementById('mainBtn');
-            const switchTxt = document.querySelector('[data-t="switch"]');
-            btn.dataset.mode = btn.dataset.mode === 'login' ? 'register' : 'login';
-            btn.innerText = btn.dataset.mode === 'login' ? 'Anmelden' : 'Registrieren';
-            switchTxt.innerText = btn.dataset.mode === 'login' ? 'Noch kein Account? Registrieren' : 'Bereits einen Account? Anmelden';
+            const title = document.getElementById('authTitle');
+            const toggle = document.getElementById('toggleMode');
+            if (btn.dataset.mode === 'login') {
+                btn.dataset.mode = 'register';
+                btn.innerText = 'Registrieren';
+                title.innerText = 'Registrieren';
+                toggle.innerText = 'Bereits ein Account? Anmelden';
+            } else {
+                btn.dataset.mode = 'login';
+                btn.innerText = 'Anmelden';
+                title.innerText = 'Anmelden';
+                toggle.innerText = 'Noch kein Account? Registrieren';
+            }
         }
     </script>
 </body>
