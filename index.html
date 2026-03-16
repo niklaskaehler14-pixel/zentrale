@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Meine Zentrale | Pro</title>
     
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, confirmPasswordReset, verifyPasswordResetCode } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -60,7 +62,7 @@
             } catch (e) { alert(e.message); }
         };
 
-        // --- SPRACHE & UI (JETZT MIT GOOGLE SUCHE ÜBERSETZUNG) ---
+        // --- SPRACHE & UI ---
         let currentLang = 'de';
         const translations = {
             de: { title: "Meine Zentrale", login: "Anmelden", reg: "Registrieren", add: "Schnell-Links speichern", save: "Speichern ✨", name: "Name", url: "URL (z.B. github.com)", switch: "Noch kein Account? Registrieren", logout: "Abmelden", settings: "Einstellungen", forgot: "Passwort vergessen?", search: "Suche", addTile: "Link hinzufügen" },
